@@ -20,13 +20,13 @@ Usage:
  chengetai deploy
  chengetai doctor
  chengetai status
- chengetai logs
+ chengetai logs [service...]
  chengetai restart
  chengetai stop
  chengetai start
  chengetai update
  chengetai backup
- chengetai restore
+ chengetai restore [backup-dir]
  chengetai version
  chengetai help
 
@@ -34,46 +34,49 @@ HELP
 
 }
 
-case "$1" in
+CMD="${1:-}"
+[ $# -gt 0 ] && shift
+
+case "$CMD" in
 
 deploy)
-    bash "$SCRIPT_DIR/lib/deploy.sh"
+    bash "$SCRIPT_DIR/lib/deploy.sh" "$@"
     ;;
 
 doctor)
-    bash "$SCRIPT_DIR/lib/doctor.sh"
+    bash "$SCRIPT_DIR/lib/doctor.sh" "$@"
     ;;
 
 status)
-    bash "$SCRIPT_DIR/lib/status.sh"
+    bash "$SCRIPT_DIR/lib/status.sh" "$@"
     ;;
 
 logs)
-    bash "$SCRIPT_DIR/lib/logs.sh"
+    bash "$SCRIPT_DIR/lib/logs.sh" "$@"
     ;;
 
 restart)
-    bash "$SCRIPT_DIR/lib/restart.sh"
+    bash "$SCRIPT_DIR/lib/restart.sh" "$@"
     ;;
 
 stop)
-    bash "$SCRIPT_DIR/lib/stop.sh"
+    bash "$SCRIPT_DIR/lib/stop.sh" "$@"
     ;;
 
 start)
-    bash "$SCRIPT_DIR/lib/start.sh"
+    bash "$SCRIPT_DIR/lib/start.sh" "$@"
     ;;
 
 update)
-    bash "$SCRIPT_DIR/lib/update.sh"
+    bash "$SCRIPT_DIR/lib/update.sh" "$@"
     ;;
 
 backup)
-    bash "$SCRIPT_DIR/lib/backup.sh"
+    bash "$SCRIPT_DIR/lib/backup.sh" "$@"
     ;;
 
 restore)
-    bash "$SCRIPT_DIR/lib/restore.sh"
+    bash "$SCRIPT_DIR/lib/restore.sh" "$@"
     ;;
 
 version)
@@ -85,7 +88,7 @@ help|"")
     ;;
 
 *)
-    echo "Unknown command: $1"
+    echo "Unknown command: $CMD"
     show_help
     ;;
 esac
