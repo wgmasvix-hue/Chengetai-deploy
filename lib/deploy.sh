@@ -73,3 +73,27 @@ fi
 echo ""
 echo "Starting ChengetAi Deployment..."
 bash "$WORKDIR/install.sh"
+
+echo ""
+echo "============================================================"
+echo "DSpace deployment completed successfully!"
+echo "============================================================"
+
+echo ""
+echo "Frontend : http://$SERVER_IP:4000"
+echo "Backend  : http://$SERVER_IP:8080/server/api"
+
+echo ""
+read -rp "Create the DSpace administrator now? (Y/N): " CREATE_ADMIN
+
+if [[ "$CREATE_ADMIN" =~ ^[Yy]$ ]]; then
+    echo ""
+    echo "Launching DSpace administrator setup..."
+    docker exec -it dspace /dspace/bin/dspace create-administrator
+fi
+
+echo ""
+echo "============================================================"
+echo "ChengetAi Deploy Finished Successfully"
+echo "============================================================"
+
