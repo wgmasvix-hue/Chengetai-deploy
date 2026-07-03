@@ -2,15 +2,11 @@
 
 set -e
 
-source "$(dirname "$0")/common.sh"
+source "$(dirname "$0")/utils.sh"
 
-require_engine
+resolve_deployment "${1:-}"
+require_docker
 
-banner "Restarting Repository"
+banner "Restarting : $DEPLOY_NAME"
 
-compose restart
-
-echo ""
-info "Services restarted."
-echo "The backend can take 3-5 minutes to come up. Check with: chengetai status"
-echo ""
+plugin_restart

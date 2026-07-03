@@ -2,26 +2,11 @@
 
 set -e
 
-source "$(dirname "$0")/common.sh"
+source "$(dirname "$0")/utils.sh"
 
-require_engine
+resolve_deployment "${1:-}"
+require_docker
 
-banner "Service Status"
+banner "Status : $DEPLOY_NAME"
 
-compose ps
-
-SERVER_IP=$(server_ip)
-
-echo ""
-if curl -sf "http://localhost:8080/server/api" >/dev/null 2>&1; then
-    echo -e "${GREEN}✓${NC} REST API       : http://${SERVER_IP}:8080/server"
-else
-    echo -e "${RED}✗${NC} REST API       : not responding (http://${SERVER_IP}:8080/server)"
-fi
-
-if curl -sf "http://localhost:4000" >/dev/null 2>&1; then
-    echo -e "${GREEN}✓${NC} User Interface : http://${SERVER_IP}:4000"
-else
-    echo -e "${RED}✗${NC} User Interface : not responding (http://${SERVER_IP}:4000)"
-fi
-echo ""
+plugin_status

@@ -2,22 +2,11 @@
 
 set -e
 
-source "$(dirname "$0")/common.sh"
+source "$(dirname "$0")/utils.sh"
 
-require_engine
+resolve_deployment "${1:-}"
+require_docker
 
-banner "Starting Repository"
+banner "Starting : $DEPLOY_NAME"
 
-compose up -d
-
-SERVER_IP=$(server_ip)
-
-echo ""
-info "Services started."
-echo ""
-echo "  UI (browser):  http://${SERVER_IP}:4000"
-echo "  REST API:      http://${SERVER_IP}:8080/server"
-echo ""
-echo "  The backend can take 3-5 minutes to come up."
-echo "  Check progress with: chengetai status"
-echo ""
+plugin_start

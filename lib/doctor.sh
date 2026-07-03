@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+source "$(dirname "$0")/utils.sh"
 
 pass() {
     echo -e "${GREEN}✓${NC} $1"
@@ -13,8 +10,39 @@ fail() {
     echo -e "${RED}✗${NC} $1"
 }
 
-warn() {
+note() {
     echo -e "${YELLOW}!${NC} $1"
+}
+
+# When run as root, doctor installs missing dependencies itself;
+# otherwise it reports what is missing and how to fix it.
+AUTO_FIX=0
+[ "$(id -u)" = "0" ] && AUTO_FIX=1
+FIX_HINT="run 'sudo chengetai doctor' to install it automatically"
+
+APT_UPDATED=0
+apt_install() {
+    if [ "$APT_UPDATED" = "0" ]; then
+        apt-get update -qq || true
+        APT_UPDATED=1
+    fi
+    DEBIAN_FRONTEND=noninteractive apt-get install -y "$@" >/dev/null
+}
+
+ensure_cmd() {
+    local cmd="$1" pkg="$2"
+    if command -v "$cmd" >/dev/null 2>&1; then
+        pass "$cmd Installed"
+    elif [ "$AUTO_FIX" = "1" ]; then
+        echo -e "${YELLOW}!${NC} $cmd missing — installing..."
+        if apt_install "$pkg" && command -v "$cmd" >/dev/null 2>&1; then
+            pass "$cmd Installed"
+        else
+            fail "$cmd could not be installed"
+        fi
+    else
+        note "$cmd missing — $FIX_HINT"
+    fi
 }
 
 echo ""
@@ -55,38 +83,51 @@ else
 fi
 
 # Internet
-if ping -c 1 github.com >/dev/null 2>&1; then
+if ping -c 1 github.com >/dev/null 2>&1 || curl -sfI https://github.com >/dev/null 2>&1; then
     pass "Internet Connectivity"
 else
     fail "No Internet Connection"
 fi
 
+# Basic tools
+ensure_cmd curl curl
+ensure_cmd git git
+ensure_cmd ip iproute2
+
 # Docker
 if command -v docker >/dev/null 2>&1; then
     pass "Docker Installed"
+elif [ "$AUTO_FIX" = "1" ]; then
+    echo -e "${YELLOW}!${NC} Docker missing — installing..."
+    if curl -fsSL https://get.docker.com | sh >/dev/null && command -v docker >/dev/null 2>&1; then
+        pass "Docker Installed"
+    else
+        fail "Docker could not be installed"
+    fi
 else
-    warn "Docker Not Installed"
+    note "Docker Not Installed — $FIX_HINT"
 fi
 
-# Docker Compose
+# Docker Compose plugin
 if docker compose version >/dev/null 2>&1; then
     pass "Docker Compose Installed"
+elif [ "$AUTO_FIX" = "1" ] && command -v docker >/dev/null 2>&1; then
+    echo -e "${YELLOW}!${NC} Docker Compose missing — installing..."
+    if apt_install docker-compose-plugin 2>/dev/null && docker compose version >/dev/null 2>&1; then
+        pass "Docker Compose Installed"
+    else
+        mkdir -p /usr/local/lib/docker/cli-plugins
+        curl -fsSL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 \
+            -o /usr/local/lib/docker/cli-plugins/docker-compose \
+            && chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+        if docker compose version >/dev/null 2>&1; then
+            pass "Docker Compose Installed"
+        else
+            fail "Docker Compose could not be installed"
+        fi
+    fi
 else
-    warn "Docker Compose Missing"
-fi
-
-# Git
-if command -v git >/dev/null 2>&1; then
-    pass "Git Installed"
-else
-    warn "Git Missing"
-fi
-
-# Curl
-if command -v curl >/dev/null 2>&1; then
-    pass "Curl Installed"
-else
-    warn "Curl Missing"
+    note "Docker Compose Missing — $FIX_HINT"
 fi
 
 echo ""

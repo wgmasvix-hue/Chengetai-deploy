@@ -2,25 +2,29 @@
 
 set -e
 
-source "$(dirname "$0")/common.sh"
+source "$(dirname "$0")/utils.sh"
 
-require_engine
+banner "Updating ChengetAi Deploy"
 
-banner "Updating Repository"
+if [ -d "$CHENGETAI_HOME/.git" ]; then
+    BRANCH=$(git -C "$CHENGETAI_HOME" rev-parse --abbrev-ref HEAD)
+    info "Updating CLI (branch: $BRANCH)..."
+    git -C "$CHENGETAI_HOME" fetch origin "$BRANCH"
+    git -C "$CHENGETAI_HOME" pull --ff-only origin "$BRANCH"
+else
+    warn "ChengetAi Deploy was not installed from git — re-run the online installer to update the CLI."
+fi
 
-BRANCH=$(git -C "$ENGINE_DIR" rev-parse --abbrev-ref HEAD)
-
-info "Pulling latest deployment engine (branch: $BRANCH)..."
-git -C "$ENGINE_DIR" fetch origin "$BRANCH"
-git -C "$ENGINE_DIR" pull --ff-only origin "$BRANCH"
-
-info "Rebuilding branded Angular image..."
-docker build -f "$ENGINE_DIR/Dockerfile.angular" -t bpoly-dspace-angular:latest "$ENGINE_DIR"
-
-info "Applying update..."
-compose up -d --remove-orphans
+for name in $(list_deployments); do
+    echo ""
+    info "Updating deployment '$name'..."
+    (
+        resolve_deployment "$name"
+        require_docker
+        plugin_update
+    ) || warn "Update of deployment '$name' failed — check the output above."
+done
 
 echo ""
-info "Update complete."
-echo "The backend can take 3-5 minutes to come up. Check with: chengetai status"
+info "ChengetAi Deploy is now at version $(cli_version)."
 echo ""

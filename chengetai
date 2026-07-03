@@ -2,33 +2,40 @@
 
 set -e
 
-VERSION="1.0.0"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_PATH="$(readlink -f "$0")"
+export CHENGETAI_HOME="${CHENGETAI_HOME:-$(cd "$(dirname "$SCRIPT_PATH")" && pwd)}"
+
+VERSION="$(cat "$CHENGETAI_HOME/VERSION" 2>/dev/null || echo unknown)"
 
 show_help() {
 
 cat <<HELP
 
 =========================================================
-        ChengetAi Deploy : DSpace 8.3
+        ChengetAi Deploy v${VERSION}
 =========================================================
 
 One Command. Complete Deployment.
 
 Usage:
 
- chengetai deploy
- chengetai doctor
- chengetai status
- chengetai logs [service...]
- chengetai restart
- chengetai stop
- chengetai start
- chengetai update
- chengetai backup
- chengetai restore [backup-dir]
- chengetai version
- chengetai help
+ chengetai install                    Install or update ChengetAi Deploy on this server
+ chengetai doctor                     Check the system and install missing dependencies
+ chengetai create [platform] [name]   Create a new deployment profile
+ chengetai deploy [platform|name]     Deploy a repository (creates a profile if needed)
+ chengetai start [name]               Start a deployment
+ chengetai stop [name]                Stop a deployment
+ chengetai restart [name]             Restart services
+ chengetai status [name]              Show service status
+ chengetai logs [name] [service...]   View logs
+ chengetai backup [name]              Create a backup
+ chengetai restore [name] [dir]       Restore a backup
+ chengetai update                     Update ChengetAi Deploy and its deployments
+ chengetai remove [name]              Remove a deployment
+ chengetai version                    Show version information
+ chengetai help                       Display all commands
+
+Platforms: dspace (koha, moodle and ojs coming soon)
 
 HELP
 
@@ -39,44 +46,8 @@ CMD="${1:-}"
 
 case "$CMD" in
 
-deploy)
-    bash "$SCRIPT_DIR/lib/deploy.sh" "$@"
-    ;;
-
-doctor)
-    bash "$SCRIPT_DIR/lib/doctor.sh" "$@"
-    ;;
-
-status)
-    bash "$SCRIPT_DIR/lib/status.sh" "$@"
-    ;;
-
-logs)
-    bash "$SCRIPT_DIR/lib/logs.sh" "$@"
-    ;;
-
-restart)
-    bash "$SCRIPT_DIR/lib/restart.sh" "$@"
-    ;;
-
-stop)
-    bash "$SCRIPT_DIR/lib/stop.sh" "$@"
-    ;;
-
-start)
-    bash "$SCRIPT_DIR/lib/start.sh" "$@"
-    ;;
-
-update)
-    bash "$SCRIPT_DIR/lib/update.sh" "$@"
-    ;;
-
-backup)
-    bash "$SCRIPT_DIR/lib/backup.sh" "$@"
-    ;;
-
-restore)
-    bash "$SCRIPT_DIR/lib/restore.sh" "$@"
+install|doctor|create|deploy|start|stop|restart|status|logs|backup|restore|update|remove)
+    exec bash "$CHENGETAI_HOME/lib/$CMD.sh" "$@"
     ;;
 
 version)
@@ -90,5 +61,6 @@ help|"")
 *)
     echo "Unknown command: $CMD"
     show_help
+    exit 1
     ;;
 esac
