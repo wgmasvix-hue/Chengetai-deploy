@@ -14,19 +14,28 @@ note() {
     echo -e "${YELLOW}!${NC} $1"
 }
 
-# When run as root, doctor installs missing dependencies itself;
-# otherwise it reports what is missing and how to fix it.
-AUTO_FIX=0
-[ "$(id -u)" = "0" ] && AUTO_FIX=1
-FIX_HINT="run 'sudo chengetai doctor' to install it automatically"
+# Doctor installs missing dependencies itself — directly when root,
+# through sudo otherwise. Only when neither is possible does it just
+# report what is missing.
+SUDO=""
+AUTO_FIX=1
+if [ "$(id -u)" != "0" ]; then
+    if command -v sudo >/dev/null 2>&1; then
+        SUDO="sudo"
+    else
+        AUTO_FIX=0
+    fi
+fi
+FIX_HINT="re-run as root (or install sudo) so it can be installed automatically"
+MISSING=0
 
 APT_UPDATED=0
 apt_install() {
     if [ "$APT_UPDATED" = "0" ]; then
-        apt-get update -qq || true
+        $SUDO apt-get update -qq || true
         APT_UPDATED=1
     fi
-    DEBIAN_FRONTEND=noninteractive apt-get install -y "$@" >/dev/null
+    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y "$@" >/dev/null
 }
 
 ensure_cmd() {
@@ -39,9 +48,11 @@ ensure_cmd() {
             pass "$cmd Installed"
         else
             fail "$cmd could not be installed"
+            MISSING=$((MISSING + 1))
         fi
     else
         note "$cmd missing — $FIX_HINT"
+        MISSING=$((MISSING + 1))
     fi
 }
 
@@ -82,8 +93,10 @@ else
     fail "Minimum 40GB free space required"
 fi
 
-# Internet
-if ping -c 1 github.com >/dev/null 2>&1 || curl -sfI https://github.com >/dev/null 2>&1; then
+# Internet — ICMP is often blocked, so fall back to HTTPS probes.
+if ping -c 1 -W 2 github.com >/dev/null 2>&1 \
+    || curl -sf -m 10 -o /dev/null https://github.com \
+    || curl -sf -m 10 -o /dev/null https://api.github.com; then
     pass "Internet Connectivity"
 else
     fail "No Internet Connection"
@@ -99,13 +112,16 @@ if command -v docker >/dev/null 2>&1; then
     pass "Docker Installed"
 elif [ "$AUTO_FIX" = "1" ]; then
     echo -e "${YELLOW}!${NC} Docker missing — installing..."
-    if curl -fsSL https://get.docker.com | sh >/dev/null && command -v docker >/dev/null 2>&1; then
+    if curl -fsSL https://get.docker.com | $SUDO sh >/dev/null && command -v docker >/dev/null 2>&1; then
+        [ -n "$SUDO" ] && $SUDO usermod -aG docker "$USER" 2>/dev/null
         pass "Docker Installed"
     else
         fail "Docker could not be installed"
+        MISSING=$((MISSING + 1))
     fi
 else
     note "Docker Not Installed — $FIX_HINT"
+    MISSING=$((MISSING + 1))
 fi
 
 # Docker Compose plugin
@@ -116,21 +132,29 @@ elif [ "$AUTO_FIX" = "1" ] && command -v docker >/dev/null 2>&1; then
     if apt_install docker-compose-plugin 2>/dev/null && docker compose version >/dev/null 2>&1; then
         pass "Docker Compose Installed"
     else
-        mkdir -p /usr/local/lib/docker/cli-plugins
-        curl -fsSL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 \
+        $SUDO mkdir -p /usr/local/lib/docker/cli-plugins
+        $SUDO curl -fsSL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 \
             -o /usr/local/lib/docker/cli-plugins/docker-compose \
-            && chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+            && $SUDO chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
         if docker compose version >/dev/null 2>&1; then
             pass "Docker Compose Installed"
         else
             fail "Docker Compose could not be installed"
+            MISSING=$((MISSING + 1))
         fi
     fi
 else
     note "Docker Compose Missing — $FIX_HINT"
+    MISSING=$((MISSING + 1))
 fi
 
 echo ""
 echo "========================================="
 echo " Ready for Deployment Check Complete"
 echo "========================================="
+
+if [ "$MISSING" -gt 0 ]; then
+    echo ""
+    note "$MISSING dependency issue(s) remain — resolve them before deploying."
+    exit 1
+fi

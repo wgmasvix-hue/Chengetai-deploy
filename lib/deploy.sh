@@ -31,7 +31,8 @@ fi
 
 echo ""
 info "Running Deployment Readiness Check..."
-bash "$CHENGETAI_HOME/lib/doctor.sh"
+bash "$CHENGETAI_HOME/lib/doctor.sh" \
+    || error "Required dependencies are missing and could not be installed — resolve the issues above and re-run: chengetai deploy $DEPLOY_NAME"
 
 banner "Deploying '$DEPLOY_NAME' ($PLATFORM)"
 
