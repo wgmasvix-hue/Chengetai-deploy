@@ -13,18 +13,30 @@ echo ""
 
 read -rp "Institution Name       : " INSTITUTION
 read -rp "Repository Name        : " REPOSITORY
-read -rp "Administrator Email    : " ADMIN_EMAIL
-read -rp "Administrator Name     : " ADMIN_NAME
 
-read -rsp "Administrator Password : " ADMIN_PASS
-echo
-read -rsp "Confirm Password       : " ADMIN_PASS2
-echo
+if [[ -z "${ADMIN_EMAIL:-}" ]]; then
+    read -rp "Administrator Email    : " ADMIN_EMAIL
+fi
 
-if [ "$ADMIN_PASS" != "$ADMIN_PASS2" ]; then
-    echo ""
-    echo "ERROR: Passwords do not match."
-    exit 1
+if [[ -z "${ADMIN_FIRST_NAME:-}" ]]; then
+    read -rp "Admin First Name       : " ADMIN_FIRST_NAME
+fi
+
+if [[ -z "${ADMIN_LAST_NAME:-}" ]]; then
+    read -rp "Admin Last Name        : " ADMIN_LAST_NAME
+fi
+
+if [[ -z "${ADMIN_PASS:-}" ]]; then
+    read -rsp "Administrator Password : " ADMIN_PASS
+    echo
+    read -rsp "Confirm Password       : " ADMIN_PASS2
+    echo
+
+    if [ "$ADMIN_PASS" != "$ADMIN_PASS2" ]; then
+        echo ""
+        echo "ERROR: Passwords do not match."
+        exit 1
+    fi
 fi
 
 echo ""
@@ -34,6 +46,7 @@ echo "========================================="
 echo "Institution : $INSTITUTION"
 echo "Repository  : $REPOSITORY"
 echo "Admin Email : $ADMIN_EMAIL"
+echo "Admin Name  : $ADMIN_FIRST_NAME $ADMIN_LAST_NAME"
 echo ""
 
 read -rp "Proceed with deployment? (Y/N): " ANSWER
@@ -46,7 +59,8 @@ fi
 export INSTITUTION
 export REPOSITORY
 export ADMIN_EMAIL
-export ADMIN_NAME
+export ADMIN_FIRST_NAME
+export ADMIN_LAST_NAME
 export ADMIN_PASS
 
 echo ""
