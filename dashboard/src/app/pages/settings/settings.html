@@ -1,1 +1,18 @@
-<p>settings works!</p>
+<h1>⚙️ Settings</h1>
+
+<section class="card">
+  <h3>Account</h3>
+  <p><b>Email:</b> {{ auth.user()?.email }}</p>
+  <p><b>Role:</b> {{ auth.user()?.role }}</p>
+</section>
+
+<section class="card">
+  <h3>Change password</h3>
+  <form (ngSubmit)="changePassword()">
+    <input type="password" name="cur" placeholder="Current password" [(ngModel)]="currentPassword" required />
+    <input type="password" name="new" placeholder="New password" [(ngModel)]="newPassword" required />
+    <button type="submit">Update password</button>
+  </form>
+  <p class="ok" *ngIf="message()">{{ message() }}</p>
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+</section>

@@ -52,3 +52,36 @@ export interface LoginResponse {
   token: string;
   user: AuthUser;
 }
+
+export interface Job {
+  id: string;
+  kind: string;
+  meta: Record<string, unknown>;
+  status: 'running' | 'success' | 'failed';
+  exitCode: number | null;
+  startedAt: string;
+  finishedAt: string | null;
+  lines: number;
+  log?: string[];
+  nextCursor?: number;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  role: 'viewer' | 'engineer' | 'admin';
+  createdAt?: string;
+}
+
+export interface NewDeploymentRequest {
+  name: string;
+  platform: string;
+  institution?: string;
+  repository?: string;
+  adminEmail?: string;
+  adminFirstName?: string;
+  adminLastName?: string;
+  adminPassword?: string;
+  uiPort?: number;
+  restPort?: number;
+}

@@ -1,0 +1,10 @@
+.head { display: flex; justify-content: space-between; align-items: center; }
+h1 { color: #e2e8f0; }
+button { padding: .5rem .9rem; border: 0; border-radius: 8px; background: #3b82f6; color: #fff; cursor: pointer; }
+button.danger { background: #dc2626; }
+.form { display: flex; gap: .5rem; margin: 1rem 0; flex-wrap: wrap; }
+.form input, .form select { padding: .6rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; }
+.error { color: #f87171; }
+.tbl { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.tbl th, .tbl td { text-align: left; padding: .7rem; border-bottom: 1px solid #1e293b; color: #e2e8f0; }
+.tbl select { padding: .3rem; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; }

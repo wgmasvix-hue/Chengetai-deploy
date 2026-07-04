@@ -1,0 +1,8 @@
+h1 { color: #e2e8f0; }
+.card { background: #1e293b; border-radius: 12px; padding: 1.25rem; margin-top: 1rem; max-width: 480px; }
+.card h3 { color: #e2e8f0; margin-bottom: .5rem; }
+.card p { color: #cbd5e1; }
+form { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
+input { padding: .6rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; }
+button { padding: .7rem; border: 0; border-radius: 8px; background: #3b82f6; color: #fff; font-weight: 600; cursor: pointer; }
+.ok { color: #22c55e; } .error { color: #f87171; }

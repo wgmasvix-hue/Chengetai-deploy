@@ -8,6 +8,7 @@ import { NewDeployment } from './pages/new-deployment/new-deployment';
 import { Server } from './pages/server/server';
 import { Backups } from './pages/backups/backups';
 import { Settings } from './pages/settings/settings';
+import { Users } from './pages/users/users';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -22,6 +23,7 @@ export const routes: Routes = [
       { path: 'new-deployment', component: NewDeployment },
       { path: 'server', component: Server },
       { path: 'backups', component: Backups },
+      { path: 'users', component: Users },
       { path: 'settings', component: Settings },
     ],
   },

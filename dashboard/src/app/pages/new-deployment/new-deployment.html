@@ -1,1 +1,43 @@
-<p>new-deployment works!</p>
+<h1>🚀 New Deployment</h1>
+
+<form class="form" *ngIf="!jobId()" (ngSubmit)="submit()">
+  <label>Deployment name <small>(lowercase, digits, hyphens)</small></label>
+  <input name="name" [(ngModel)]="form.name" required placeholder="library" />
+
+  <label>Platform</label>
+  <select name="platform" [(ngModel)]="form.platform">
+    <option *ngFor="let p of plugins()" [value]="p.name">{{ p.displayName }}</option>
+  </select>
+
+  <div class="grid">
+    <div><label>Institution</label><input name="institution" [(ngModel)]="form.institution" /></div>
+    <div><label>Repository name</label><input name="repository" [(ngModel)]="form.repository" /></div>
+  </div>
+
+  <div class="grid">
+    <div><label>Admin email</label><input name="adminEmail" type="email" [(ngModel)]="form.adminEmail" /></div>
+    <div><label>Admin password</label><input name="adminPassword" type="password" [(ngModel)]="form.adminPassword" /></div>
+  </div>
+
+  <div class="grid">
+    <div><label>Admin first name</label><input name="adminFirstName" [(ngModel)]="form.adminFirstName" /></div>
+    <div><label>Admin last name</label><input name="adminLastName" [(ngModel)]="form.adminLastName" /></div>
+  </div>
+
+  <div class="grid">
+    <div><label>UI port</label><input name="uiPort" type="number" [(ngModel)]="form.uiPort" /></div>
+    <div><label>REST port</label><input name="restPort" type="number" [(ngModel)]="form.restPort" /></div>
+  </div>
+
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+  <button type="submit" [disabled]="submitting()">Deploy</button>
+</form>
+
+<div class="progress" *ngIf="jobId()">
+  <h3>Deployment
+    <span class="badge" [class.ok]="jobStatus()==='success'" [class.fail]="jobStatus()==='failed'">
+      {{ jobStatus() || 'running' }}
+    </span>
+  </h3>
+  <pre class="log">{{ jobLog().join('\n') }}</pre>
+</div>
