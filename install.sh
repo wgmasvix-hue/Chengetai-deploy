@@ -7,12 +7,12 @@ echo "============================================================"
 echo " ChengetAi Deploy : Deployment Complete"
 echo "============================================================"
 
+SERVER_IP=$(hostname -I | awk '{print $1}')
+
 echo ""
 echo "✓ DSpace Backend Running"
 echo "✓ DSpace Frontend Running"
 echo "✓ Deployment Successful"
-
-SERVER_IP=$(hostname -I | awk '{print $1}')
 
 echo ""
 echo "Frontend : http://$SERVER_IP:4000"
@@ -27,7 +27,7 @@ if [[ "$CREATE_ADMIN" =~ ^[Yy]$ ]]; then
     docker exec -it dspace /dspace/bin/dspace create-administrator
 else
     echo ""
-    echo "You can create the administrator later with:"
+    echo "You can create the administrator later using:"
     echo "docker exec -it dspace /dspace/bin/dspace create-administrator"
 fi
 
