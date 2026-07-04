@@ -103,6 +103,7 @@ resolve_deployment() {
         name="$all"
     fi
 
+    # shellcheck disable=SC2034  # used by sourced plugin functions
     DEPLOY_NAME="$name"
     DEPLOY_DIR="$DEPLOYMENTS_DIR/$name"
     if [ ! -f "$DEPLOY_DIR/profile.env" ]; then
@@ -124,6 +125,8 @@ resolve_deployment() {
 prompt_if_empty() {
     local var="$1" label="$2"
     if [ -z "${!var:-}" ]; then
+        # Indirect read: $var holds the target variable name (e.g. INSTITUTION).
+        # shellcheck disable=SC2229
         read -rp "$label : " "$var"
     fi
     [ -n "${!var:-}" ] || error "$label is required."

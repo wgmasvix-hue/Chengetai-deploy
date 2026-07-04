@@ -12,6 +12,9 @@ GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 say()  { echo -e "${GREEN}[+]${NC} $*"; }
 warn() { echo -e "${YELLOW}[!]${NC} $*"; }
 
+WITH_DSPACE=0
+[ "${1:-}" = "--with-dspace" ] && WITH_DSPACE=1
+
 [ "$(id -u)" = 0 ] || { echo "Run with sudo."; exit 1; }
 
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
@@ -60,7 +63,14 @@ ln -sf /etc/nginx/sites-available/chengetai /etc/nginx/sites-enabled/chengetai
 rm -f /etc/nginx/sites-enabled/default
 nginx -t >/dev/null 2>&1 && systemctl reload nginx
 
-# 6. Done ---------------------------------------------------------------------
+# 6. Optional: deploy DSpace straight away ------------------------------------
+if [ "$WITH_DSPACE" = 1 ]; then
+  say "Deploying a DSpace repository (installs Docker, ~15 min on first run)..."
+  chengetai doctor
+  chengetai deploy dspace || warn "DSpace deploy did not finish — run 'chengetai deploy dspace' to retry."
+fi
+
+# 7. Done ---------------------------------------------------------------------
 IP=$(hostname -I | awk '{print $1}')
 echo ""
 say "ChengetAi Deploy is running."

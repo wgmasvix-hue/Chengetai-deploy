@@ -15,6 +15,7 @@ export class ApiService {
     || `${window.location.protocol}//${window.location.hostname}:3000/api`;
 
   // ── Dashboard / catalogue ──
+  getHealth() { return this.http.get<{ status: string; version: string }>(`${this.apiUrl}/health`); }
   getDashboard() { return this.http.get<DashboardStats>(`${this.apiUrl}/dashboard`); }
   getPlugins() { return this.http.get<Plugin[]>(`${this.apiUrl}/plugins`); }
 

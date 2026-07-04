@@ -1,4 +1,7 @@
 <h1>📚 Deployments</h1>
+
+<p class="notice" *ngIf="notice()">{{ notice() }}</p>
+
 <div class="cards">
   <div class="card" *ngFor="let d of deployments()">
     <h3>{{ d.repository || d.name }}</h3>
@@ -6,6 +9,14 @@
     <p><b>Platform:</b> {{ d.platform }}</p>
     <p><b>Ports:</b> UI {{ d.uiPort }}, REST {{ d.restPort }}</p>
     <span class="badge" [class.ready]="d.engineReady">{{ d.engineReady ? 'Deployed' : 'Not deployed' }}</span>
+
+    <div class="actions">
+      <button (click)="act(d, 'start')"   [disabled]="busy()">Start</button>
+      <button (click)="act(d, 'stop')"    [disabled]="busy()">Stop</button>
+      <button (click)="act(d, 'restart')" [disabled]="busy()">Restart</button>
+      <button (click)="act(d, 'backup')"  [disabled]="busy()">Backup</button>
+      <button class="danger" (click)="remove(d)" [disabled]="busy()">Remove</button>
+    </div>
   </div>
-  <p class="muted" *ngIf="!deployments().length">No deployments on this server yet.</p>
+  <p class="muted" *ngIf="!deployments().length">No deployments on this server yet. Create one under 🚀 Deploy.</p>
 </div>

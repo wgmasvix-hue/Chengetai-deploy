@@ -15,6 +15,7 @@
 #   verify     the installer waits for the backend health endpoint
 #   maintain   start/stop/status/logs/backup/restore/update/remove below
 
+# shellcheck disable=SC2034  # PLUGIN_* consumed by the CLI after sourcing
 PLUGIN_NAME="dspace"
 PLUGIN_DESCRIPTION="DSpace 8 institutional repository"
 PLUGIN_STATUS="available"
@@ -191,7 +192,8 @@ plugin_backup() {
         error "The backend container (dspace) is not running. Start the repository first: chengetai start $DEPLOY_NAME"
     fi
 
-    local dest="$DEPLOY_DIR/backups/chengetai-backup-$(date +%Y%m%d-%H%M%S)"
+    local dest
+    dest="$DEPLOY_DIR/backups/chengetai-backup-$(date +%Y%m%d-%H%M%S)"
     mkdir -p "$dest"
 
     info "Backing up database..."
