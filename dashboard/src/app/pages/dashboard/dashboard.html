@@ -1,0 +1,56 @@
+<h1>🚀 ChengetAi Deploy</h1>
+
+<div class="cards">
+
+  <div class="card">
+    <h3>Repositories</h3>
+    <h1>{{dashboard.repositories}}</h1>
+  </div>
+
+  <div class="card">
+    <h3>Containers</h3>
+    <h1>{{dashboard.containers}}</h1>
+  </div>
+
+  <div class="card">
+    <h3>CPU</h3>
+    <h1>{{dashboard.cpu}}%</h1>
+  </div>
+
+  <div class="card">
+    <h3>Memory</h3>
+    <h1>{{dashboard.memory}}%</h1>
+  </div>
+
+  <div class="card">
+    <h3>Disk</h3>
+    <h1>{{dashboard.disk}}%</h1>
+  </div>
+
+  <div class="card">
+    <h3>Uptime</h3>
+    <h1>{{dashboard.uptime}}</h1>
+  </div>
+
+</div>
+
+<h2>🖥 Connected Servers</h2>
+
+<div class="cards">
+
+  <div class="card" *ngFor="let server of servers">
+
+    <h3>{{server.name}}</h3>
+
+    <p><b>Host:</b> {{server.host}}</p>
+
+    <p><b>OS:</b> {{server.os}}</p>
+
+    <p><b>Status:</b> {{server.status}}</p>
+
+    <button>💻 Terminal</button>
+    <button>🚀 Deploy</button>
+
+  </div>
+
+</div>
