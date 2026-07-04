@@ -7,8 +7,10 @@ const audit = require('../middleware/audit');
 const auth = require('../controllers/auth');
 const dashboard = require('../controllers/dashboard');
 const servers = require('../controllers/servers');
+const deployments = require('../controllers/deployments');
+const jobsCtrl = require('../controllers/jobs');
+const users = require('../controllers/users');
 const pluginsService = require('../services/plugins');
-const deploymentsService = require('../services/deployments');
 const pkg = require('../../package.json');
 
 const router = express.Router();
@@ -52,8 +54,32 @@ router.post(
 router.get('/dashboard', dashboard.stats);
 
 router.get('/plugins', (req, res) => res.json(pluginsService.list()));
-router.get('/deployments', (req, res) => res.json(deploymentsService.list()));
 
+// ── Deployments (Task 5 lifecycle, driven through the CLI) ─────────────────
+router.get('/deployments', deployments.list);
+router.post(
+  '/deployments',
+  requireRole('engineer'),
+  validate({
+    name: { required: true, type: 'string', maxLength: 100 },
+    platform: { type: 'string', maxLength: 40 },
+    institution: { type: 'string', maxLength: 200 },
+    repository: { type: 'string', maxLength: 200 },
+    adminEmail: { type: 'email', maxLength: 200 },
+    uiPort: { type: 'port' },
+    restPort: { type: 'port' },
+  }),
+  deployments.create
+);
+router.get('/deployments/:name/status', deployments.status);
+router.post('/deployments/:name/actions/:action', requireRole('engineer'), deployments.action);
+router.delete('/deployments/:name', requireRole('admin'), deployments.remove);
+
+// ── Jobs (progress of long-running CLI operations) ─────────────────────────
+router.get('/jobs', jobsCtrl.list);
+router.get('/jobs/:id', jobsCtrl.get);
+
+// ── Servers (Task 6) ───────────────────────────────────────────────────────
 router.get('/servers', servers.list);
 router.post(
   '/servers',
@@ -69,5 +95,20 @@ router.post(
 );
 router.patch('/servers/:id', requireRole('engineer'), servers.update);
 router.delete('/servers/:id', requireRole('admin'), servers.remove);
+
+// ── Users (RBAC administration) ────────────────────────────────────────────
+router.get('/users', requireRole('admin'), users.list);
+router.post(
+  '/users',
+  requireRole('admin'),
+  validate({
+    email: { required: true, type: 'email', maxLength: 200 },
+    password: { required: true, type: 'string', maxLength: 200 },
+    role: { enum: ['viewer', 'engineer', 'admin'] },
+  }),
+  users.create
+);
+router.patch('/users/:id', requireRole('admin'), users.update);
+router.delete('/users/:id', requireRole('admin'), users.remove);
 
 module.exports = router;

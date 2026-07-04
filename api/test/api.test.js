@@ -161,3 +161,57 @@ test('mutations are audit-logged', async () => {
   assert.ok(logs.length >= 2);
   assert.ok(logs.every((l) => l.user && l.method && l.path));
 });
+
+test('admin can manage users; last admin is protected', async () => {
+  const created = await api('POST', '/api/users', {
+    email: 'neweng@test.local',
+    password: 'engineer-pass-1',
+    role: 'engineer',
+  });
+  assert.equal(created.status, 201);
+  assert.equal(created.json.role, 'engineer');
+  assert.equal(created.json.passwordHash, undefined); // never leak the hash
+
+  const listed = await api('GET', '/api/users');
+  assert.ok(listed.json.length >= 2);
+
+  const promoted = await api('PATCH', `/api/users/${created.json.id}`, { role: 'viewer' });
+  assert.equal(promoted.json.role, 'viewer');
+
+  const removed = await api('DELETE', `/api/users/${created.json.id}`);
+  assert.equal(removed.status, 204);
+
+  // Only one admin exists (the seeded one) — deleting it must be refused.
+  const admins = (await api('GET', '/api/users')).json.filter((u) => u.role === 'admin');
+  const lastAdmin = await api('DELETE', `/api/users/${admins[0].id}`);
+  assert.equal(lastAdmin.status, 409);
+});
+
+test('deployment creation validates the name', async () => {
+  const bad = await api('POST', '/api/deployments', { name: 'Bad Name!' });
+  assert.equal(bad.status, 400);
+});
+
+test('jobs endpoint is reachable', async () => {
+  const { status, json } = await api('GET', '/api/jobs');
+  assert.equal(status, 200);
+  assert.ok(Array.isArray(json));
+});
+
+test('users endpoints require admin role', async () => {
+  const repos = require('../src/repositories');
+  const bcrypt = require('bcryptjs');
+  await repos.users.insert({
+    id: 'eng-rbac',
+    email: 'eng-rbac@test.local',
+    passwordHash: bcrypt.hashSync('eng-rbac-pass', 10),
+    role: 'engineer',
+  });
+  const login = await api('POST', '/api/auth/login', {
+    email: 'eng-rbac@test.local', password: 'eng-rbac-pass',
+  }, false);
+  const res = await fetch(`${base}/api/users`, {
+    headers: { authorization: `Bearer ${login.json.token}` },
+  });
+  assert.equal(res.status, 403);
+});
