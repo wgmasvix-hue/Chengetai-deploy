@@ -1,91 +1,36 @@
 #!/usr/bin/env bash
 
-set -e
-
 VERSION="1.0.0"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+INSTALL_DIR="/opt/chengetai-deploy"
 
-show_help() {
+clear
 
-cat <<HELP
-
-=========================================================
-        ChengetAi Deploy : DSpace 8.3
-=========================================================
-
-One Command. Complete Deployment.
-
-Usage:
-
- chengetai deploy
- chengetai doctor
- chengetai status
- chengetai logs
- chengetai restart
- chengetai stop
- chengetai start
- chengetai update
- chengetai backup
- chengetai restore
- chengetai version
- chengetai help
-
-HELP
-
-}
+echo "========================================================"
+echo "          ChengetAi Deploy : DSpace 8.3"
+echo "========================================================"
+echo ""
+echo "One Command. Complete Deployment."
+echo ""
+echo "Version : $VERSION"
+echo ""
 
 case "$1" in
-
-deploy)
-    bash "$SCRIPT_DIR/lib/deploy.sh"
-    ;;
-
-doctor)
-    bash "$SCRIPT_DIR/lib/doctor.sh"
-    ;;
-
-status)
-    bash "$SCRIPT_DIR/lib/status.sh"
-    ;;
-
-logs)
-    bash "$SCRIPT_DIR/lib/logs.sh"
-    ;;
-
-restart)
-    bash "$SCRIPT_DIR/lib/restart.sh"
-    ;;
-
-stop)
-    bash "$SCRIPT_DIR/lib/stop.sh"
-    ;;
-
-start)
-    bash "$SCRIPT_DIR/lib/start.sh"
-    ;;
-
-update)
-    bash "$SCRIPT_DIR/lib/update.sh"
-    ;;
-
-backup)
-    bash "$SCRIPT_DIR/lib/backup.sh"
-    ;;
-
-restore)
-    bash "$SCRIPT_DIR/lib/restore.sh"
-    ;;
-
-version)
-    echo "ChengetAi Deploy Version $VERSION"
-    ;;
-
-help|"")
-    show_help
-    ;;
-
-*)
-    echo "Unknown command: $1"
-    show_help
-    ;;
+    deploy)
+        bash "$INSTALL_DIR/lib/deploy.sh"
+        ;;
+    doctor)
+        bash "$INSTALL_DIR/lib/doctor.sh"
+        ;;
+    help|"")
+        echo "Usage:"
+        echo "  chengetai deploy"
+        echo "  chengetai doctor"
+        echo "  chengetai help"
+        ;;
+    version)
+        echo "$VERSION"
+        ;;
+    *)
+        echo "Unknown command: $1"
+        ;;
 esac

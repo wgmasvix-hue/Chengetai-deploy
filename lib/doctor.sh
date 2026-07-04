@@ -1,95 +1,72 @@
 #!/usr/bin/env bash
 
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+set -e
 
-pass() {
-    echo -e "${GREEN}✓${NC} $1"
-}
-
-fail() {
-    echo -e "${RED}✗${NC} $1"
-}
-
-warn() {
-    echo -e "${YELLOW}!${NC} $1"
-}
-
-echo ""
 echo "========================================="
 echo " ChengetAi Deployment Readiness Report"
 echo "========================================="
 echo ""
 
-# Ubuntu Version
-if grep -q "Ubuntu 24" /etc/os-release || grep -q "Ubuntu 22" /etc/os-release; then
-    pass "Ubuntu Version"
-else
-    fail "Unsupported Ubuntu Version"
-fi
+install_package() {
+    PKG="$1"
+    echo "[INFO] Installing $PKG..."
+    apt-get update -qq
+    apt-get install -y "$PKG"
+}
 
-# CPU
-CPU=$(nproc)
-if [ "$CPU" -ge 2 ]; then
-    pass "CPU Cores: $CPU"
-else
-    fail "Minimum 2 CPU cores required"
-fi
+echo "Checking Ubuntu..."
+grep -q Ubuntu /etc/os-release && echo "✓ Ubuntu Version"
 
-# RAM
-RAM=$(free -g | awk '/Mem:/ {print $2}')
-if [ "$RAM" -ge 4 ]; then
-    pass "Memory: ${RAM}GB"
-else
-    fail "Minimum 4GB RAM required"
-fi
+echo "✓ CPU Cores: $(nproc)"
+echo "✓ Memory: $(free -h | awk '/Mem:/ {print $2}')"
+echo "✓ Disk Space: $(df -h / | awk 'NR==2 {print $4}') Free"
 
-# Disk
-DISK=$(df -BG / | awk 'NR==2 {gsub("G","",$4); print $4}')
-if [ "$DISK" -ge 40 ]; then
-    pass "Disk Space: ${DISK}GB Free"
+echo ""
+echo "Checking Internet..."
+if ping -c1 github.com >/dev/null 2>&1; then
+    echo "✓ Internet Connectivity"
 else
-    fail "Minimum 40GB free space required"
-fi
-
-# Internet
-if ping -c 1 github.com >/dev/null 2>&1; then
-    pass "Internet Connectivity"
-else
-    fail "No Internet Connection"
-fi
-
-# Docker
-if command -v docker >/dev/null 2>&1; then
-    pass "Docker Installed"
-else
-    warn "Docker Not Installed"
-fi
-
-# Docker Compose
-if docker compose version >/dev/null 2>&1; then
-    pass "Docker Compose Installed"
-else
-    warn "Docker Compose Missing"
-fi
-
-# Git
-if command -v git >/dev/null 2>&1; then
-    pass "Git Installed"
-else
-    warn "Git Missing"
-fi
-
-# Curl
-if command -v curl >/dev/null 2>&1; then
-    pass "Curl Installed"
-else
-    warn "Curl Missing"
+    echo "✗ No Internet Connection"
+    exit 1
 fi
 
 echo ""
+echo "Checking Git..."
+if ! command -v git >/dev/null 2>&1; then
+    install_package git
+fi
+echo "✓ Git Installed"
+
+echo ""
+echo "Checking Curl..."
+if ! command -v curl >/dev/null 2>&1; then
+    install_package curl
+fi
+echo "✓ Curl Installed"
+
+echo ""
+echo "Checking Docker..."
+if ! command -v docker >/dev/null 2>&1; then
+    echo "[INFO] Installing Docker..."
+    curl -fsSL https://get.docker.com | sh
+fi
+echo "✓ Docker Installed"
+
+echo ""
+echo "Checking Docker Compose..."
+if ! docker compose version >/dev/null 2>&1; then
+    install_package docker-compose-plugin
+fi
+echo "✓ Docker Compose Installed"
+
+echo ""
+echo "Checking Java..."
+if ! command -v java >/dev/null 2>&1; then
+    install_package openjdk-21-jdk
+fi
+echo "✓ Java Installed"
+
+echo ""
 echo "========================================="
-echo " Ready for Deployment Check Complete"
+echo " System Ready For Deployment"
 echo "========================================="
