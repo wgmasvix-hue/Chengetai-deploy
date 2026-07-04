@@ -1,13 +1,22 @@
+# Dependencies
 node_modules/
 **/node_modules/
 
-dist/
-.angular/
-coverage/
+# Angular
+dashboard/dist/
+dashboard/.angular/
 
+# Logs
+*.log
+logs/
+
+# Environment
 .env
 .env.*
 
-*.log
-npm-debug.log*
+# PM2
+.pm2/
 
+# OS
+.DS_Store
+Thumbs.db

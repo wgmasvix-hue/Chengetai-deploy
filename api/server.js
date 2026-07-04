@@ -1,33 +1,37 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+
+const serverRoutes = require('./routes/servers');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(helmet());
-app.use(morgan("dev"));
+app.use(morgan('dev'));
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.use('/api/servers', serverRoutes);
+
+app.get('/', (req, res) => {
   res.json({
-    name: "ChengetAi Deploy API",
-    version: "0.3.0",
-    status: "running"
+    name: 'ChengetAi Deploy API',
+    version: '0.3.0',
+    status: 'running'
   });
 });
 
-app.get("/api/dashboard", (req, res) => {
+app.get('/api/dashboard', (req, res) => {
   res.json({
     repositories: 5,
     containers: 8,
     cpu: 18,
     memory: 34,
     disk: 42,
-    uptime: "15 days",
-    server: "Healthy"
+    uptime: '15 days',
+    server: 'Healthy'
   });
 });
 
