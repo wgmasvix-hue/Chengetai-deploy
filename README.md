@@ -3,6 +3,16 @@
 One Command. Complete Deployment.
 
 ChengetAi Deploy is a command-line tool for deploying and operating
+
+ChengetAi Deploy is an **orchestration platform**: it clones, configures,
+brands, deploys, verifies, monitors and maintains canonical open-source
+deployment repositories (starting with DSpace via the Bulawayo Polytechnic
+reference repository). It never reimplements the deployment logic it drives.
+
+It ships three tiers — an Angular dashboard, a Node/Express REST API, and a
+Bash CLI + plugin engine. See `docs/ARCHITECTURE.md` for the full design,
+`docs/API.md` for the REST API, and `docs/PLUGIN-GUIDE.md` to add a platform.
+
 institutional platforms — starting with **DSpace 8** repositories — on any
 Ubuntu server. Install it once, then manage everything with simple
 commands, the same way you use `git` or `docker`.
