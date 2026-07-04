@@ -206,21 +206,38 @@ plugin_restore() {
 }
 
 # plugin_edit <component>
-# Opens the file behind a UI component for editing, then offers to rebuild
-# and restart the frontend so the change goes live.
-#
 # The frontend runs from the prebuilt dspace-angular image with branding
 # files layered on top (see Dockerfile.angular), so only those files are
-# editable. Editing page templates (homepage, footer, news, css) would
+# customisable. Editing page templates (homepage, footer, news, css) would
 # require building the UI from source, which this engine does not do.
 plugin_edit() {
     require_engine
     local component="$1" file
 
     case "$component" in
-        logo)    file="$(engine_dir)/assets/bpoly-logo.svg" ;;
-        favicon) file="$(engine_dir)/assets/favicon.svg" ;;
-        config)  file="$(engine_dir)/config.yml" ;;
+        logo)
+            file="$(engine_dir)/assets/bpoly-logo.png"
+            echo "The navbar logo is a PNG image (320x80 recommended):"
+            echo ""
+            echo "  $file"
+            echo ""
+            echo "Replace that file with your own PNG, then rebuild below."
+            ;;
+        favicon)
+            file="$(engine_dir)/assets/favicon.png"
+            echo "The browser-tab icon is a PNG image (64x64 recommended):"
+            echo ""
+            echo "  $file"
+            echo ""
+            echo "Replace that file with your own PNG, then rebuild below."
+            ;;
+        config)
+            file="$(engine_dir)/config.yml"
+            [ -f "$file" ] || error "File not found: $file"
+            echo "Opening: $file"
+            echo ""
+            "${EDITOR:-nano}" "$file"
+            ;;
         homepage|footer|news|css)
             error "'$component' cannot be edited: the frontend is a prebuilt image and only its branding files (logo, favicon, config) are replaceable. Editing page content requires a source build of dspace-angular."
             ;;
@@ -228,12 +245,6 @@ plugin_edit() {
             error "Unknown component '$component'. Editable components: logo favicon config"
             ;;
     esac
-
-    [ -f "$file" ] || error "File not found: $file"
-
-    echo "Opening: $file"
-    echo ""
-    "${EDITOR:-nano}" "$file"
 
     echo ""
     if confirm "Rebuild the frontend now so the change goes live?"; then
