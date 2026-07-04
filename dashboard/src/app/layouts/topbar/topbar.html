@@ -1,40 +1,11 @@
 <header class="topbar">
-
   <div class="left">
-
-    <button class="menu">
-      ☰
-    </button>
-
-    <div class="title">
-      ChengetAi Deploy
-    </div>
-
-  </div>
-
-  <div class="search">
-
-    <input
-      type="text"
-      placeholder="Search deployments, repositories..."
-    >
-
+    <div class="title">ChengetAi Deploy</div>
   </div>
 
   <div class="right">
-
-    <span class="status">
-      🟢 Online
-    </span>
-
-    <button>🔔</button>
-
-    <button>⚙</button>
-
-    <div class="profile">
-      WM
-    </div>
-
+    <span class="status">🟢 Online</span>
+    <div class="profile" [title]="auth.user()?.email">{{ initials() }}</div>
+    <button class="logout" (click)="logout()" title="Sign out">⎋</button>
   </div>
-
 </header>

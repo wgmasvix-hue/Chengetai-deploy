@@ -1,0 +1,18 @@
+<div class="login-wrap">
+  <form class="login-card" (ngSubmit)="submit()">
+    <div class="brand">🚀 ChengetAi Deploy</div>
+    <p class="subtitle">Sign in to continue</p>
+
+    <label>Email</label>
+    <input type="email" name="email" [(ngModel)]="email" required autocomplete="username" />
+
+    <label>Password</label>
+    <input type="password" name="password" [(ngModel)]="password" required autocomplete="current-password" />
+
+    <p class="error" *ngIf="error()">{{ error() }}</p>
+
+    <button type="submit" [disabled]="loading()">
+      {{ loading() ? 'Signing in…' : 'Sign In' }}
+    </button>
+  </form>
+</div>

@@ -1,56 +1,25 @@
-<h1>🚀 ChengetAi Deploy</h1>
+<h1>🚀 Dashboard</h1>
 
-<div class="cards">
+<p class="muted" *ngIf="loading()">Loading live metrics…</p>
 
-  <div class="card">
-    <h3>Repositories</h3>
-    <h1>{{dashboard.repositories}}</h1>
-  </div>
-
-  <div class="card">
-    <h3>Containers</h3>
-    <h1>{{dashboard.containers}}</h1>
-  </div>
-
-  <div class="card">
-    <h3>CPU</h3>
-    <h1>{{dashboard.cpu}}%</h1>
-  </div>
-
-  <div class="card">
-    <h3>Memory</h3>
-    <h1>{{dashboard.memory}}%</h1>
-  </div>
-
-  <div class="card">
-    <h3>Disk</h3>
-    <h1>{{dashboard.disk}}%</h1>
-  </div>
-
-  <div class="card">
-    <h3>Uptime</h3>
-    <h1>{{dashboard.uptime}}</h1>
-  </div>
-
+<div class="cards" *ngIf="stats() as s">
+  <div class="card"><h3>Repositories</h3><div class="value">{{ s.repositories }}</div></div>
+  <div class="card"><h3>Containers</h3><div class="value">{{ s.containers }}</div></div>
+  <div class="card"><h3>CPU</h3><div class="value">{{ s.cpu }}%</div></div>
+  <div class="card"><h3>Memory</h3><div class="value">{{ s.memory }}%</div></div>
+  <div class="card"><h3>Disk</h3><div class="value">{{ s.disk }}%</div></div>
+  <div class="card"><h3>Uptime</h3><div class="value small">{{ s.uptime }}</div></div>
 </div>
 
-<h2>🖥 Connected Servers</h2>
-
+<h2 *ngIf="deployments().length">📚 Deployments</h2>
 <div class="cards">
-
-  <div class="card" *ngFor="let server of servers">
-
-    <h3>{{server.name}}</h3>
-
-    <p><b>Host:</b> {{server.host}}</p>
-
-    <p><b>OS:</b> {{server.os}}</p>
-
-    <p><b>Status:</b> {{server.status}}</p>
-
-    <button>💻 Terminal</button>
-    <button>🚀 Deploy</button>
-
+  <div class="card" *ngFor="let d of deployments()">
+    <h3>{{ d.repository || d.name }}</h3>
+    <p class="muted">{{ d.institution }}</p>
+    <p><b>Platform:</b> {{ d.platform }}</p>
+    <p><b>UI port:</b> {{ d.uiPort }} &nbsp; <b>REST:</b> {{ d.restPort }}</p>
+    <span class="badge" [class.ready]="d.engineReady">
+      {{ d.engineReady ? 'Deployed' : 'Not deployed' }}
+    </span>
   </div>
-
 </div>

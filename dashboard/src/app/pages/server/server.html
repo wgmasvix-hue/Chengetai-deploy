@@ -1,1 +1,30 @@
-<p>server works!</p>
+<div class="head">
+  <h1>🖥 Servers</h1>
+  <button (click)="showForm.set(!showForm())">{{ showForm() ? 'Cancel' : '+ Add Server' }}</button>
+</div>
+
+<form class="form" *ngIf="showForm()" (ngSubmit)="add()">
+  <input placeholder="Name" name="name" [(ngModel)]="draft.name" required />
+  <input placeholder="Host / IP" name="host" [(ngModel)]="draft.host" required />
+  <input placeholder="SSH Port" name="port" type="number" [(ngModel)]="draft.port" />
+  <input placeholder="Username" name="username" [(ngModel)]="draft.username" required />
+  <select name="authMethod" [(ngModel)]="draft.authMethod">
+    <option value="ssh-key">SSH Key</option>
+    <option value="password">Password</option>
+  </select>
+  <input placeholder="Group" name="group" [(ngModel)]="draft.group" />
+  <button type="submit">Save</button>
+</form>
+
+<p class="error" *ngIf="error()">{{ error() }}</p>
+
+<div class="cards">
+  <div class="card" *ngFor="let s of servers()">
+    <div class="row"><h3>{{ s.name }}</h3><span class="status" [class.online]="s.status === 'online'">{{ s.status }}</span></div>
+    <p><b>Host:</b> {{ s.host }}:{{ s.port }}</p>
+    <p><b>User:</b> {{ s.username }} ({{ s.authMethod }})</p>
+    <p *ngIf="s.group"><b>Group:</b> {{ s.group }}</p>
+    <button class="danger" (click)="remove(s)">Remove</button>
+  </div>
+  <p class="muted" *ngIf="!servers().length">No servers yet. Add one to get started.</p>
+</div>
