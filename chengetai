@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 INSTALL_DIR="/opt/chengetai-deploy"
 
 clear
@@ -8,29 +8,100 @@ clear
 echo "========================================================"
 echo "          ChengetAi Deploy : DSpace 8.3"
 echo "========================================================"
-echo ""
 echo "One Command. Complete Deployment."
-echo ""
 echo "Version : $VERSION"
 echo ""
 
-case "$1" in
-    deploy)
-        bash "$INSTALL_DIR/lib/deploy.sh"
+COMMAND="$1"
+TARGET="$2"
+
+case "$COMMAND" in
+    install)  bash "$INSTALL_DIR/install.sh" ;;
+    doctor)   bash "$INSTALL_DIR/lib/doctor.sh" ;;
+    create)   bash "$INSTALL_DIR/lib/create.sh" ;;
+    deploy)   bash "$INSTALL_DIR/lib/deploy.sh" ;;
+    start)    bash "$INSTALL_DIR/lib/start.sh" ;;
+    stop)     bash "$INSTALL_DIR/lib/stop.sh" ;;
+    restart)  bash "$INSTALL_DIR/lib/restart.sh" ;;
+    status)   bash "$INSTALL_DIR/lib/status.sh" ;;
+    logs)     bash "$INSTALL_DIR/lib/logs.sh" ;;
+    backup)   bash "$INSTALL_DIR/lib/backup.sh" ;;
+    restore)  bash "$INSTALL_DIR/lib/restore.sh" ;;
+    update)   bash "$INSTALL_DIR/lib/update.sh" ;;
+
+    edit)
+        case "$TARGET" in
+            homepage) bash "$INSTALL_DIR/lib/edit-homepage.sh" ;;
+            logo)     bash "$INSTALL_DIR/lib/edit-logo.sh" ;;
+            footer)   bash "$INSTALL_DIR/lib/edit-footer.sh" ;;
+            favicon)  bash "$INSTALL_DIR/lib/edit-favicon.sh" ;;
+            news)     bash "$INSTALL_DIR/lib/edit-news.sh" ;;
+            theme)    bash "$INSTALL_DIR/lib/edit-theme.sh" ;;
+            css)      bash "$INSTALL_DIR/lib/edit-css.sh" ;;
+            *)
+                echo "Usage:"
+                echo "  chengetai edit homepage"
+                echo "  chengetai edit logo"
+                echo "  chengetai edit footer"
+                echo "  chengetai edit favicon"
+                echo "  chengetai edit news"
+                echo "  chengetai edit theme"
+                echo "  chengetai edit css"
+                ;;
+        esac
         ;;
-    doctor)
-        bash "$INSTALL_DIR/lib/doctor.sh"
-        ;;
-    help|"")
-        echo "Usage:"
-        echo "  chengetai deploy"
-        echo "  chengetai doctor"
-        echo "  chengetai help"
-        ;;
+
     version)
-        echo "$VERSION"
+        echo "ChengetAi Deploy v$VERSION"
         ;;
+
+    help|"")
+cat <<HELP
+
+ChengetAi Deploy Commands
+
+Deployment
+-----------
+chengetai install
+chengetai doctor
+chengetai create
+chengetai deploy
+
+Repository Management
+---------------------
+chengetai start
+chengetai stop
+chengetai restart
+chengetai status
+chengetai logs
+
+Editing
+-------
+chengetai edit homepage
+chengetai edit logo
+chengetai edit footer
+chengetai edit favicon
+chengetai edit news
+chengetai edit theme
+chengetai edit css
+
+Maintenance
+-----------
+chengetai backup
+chengetai restore
+chengetai update
+
+Other
+-----
+chengetai version
+chengetai help
+
+HELP
+        ;;
+
     *)
-        echo "Unknown command: $1"
+        echo "Unknown command: $COMMAND"
+        echo "Run 'chengetai help'"
+        exit 1
         ;;
 esac
