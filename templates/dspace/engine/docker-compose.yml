@@ -1,0 +1,120 @@
+# ChengetAi Deploy — DSpace 8 stack template.
+# Instantiated per deployment: the plugin copies this file into
+# deployments/<name>/engine/ and generates the .env beside it
+# (SERVER_IP, UI_PORT, REST_PORT, POSTGRES_PASSWORD, DSPACE_NAME).
+# The compose project name is chengetai-<deployment>, so several
+# deployments can coexist on one server as long as their ports differ.
+
+networks:
+  dspacenet:
+
+services:
+  dspace:
+    image: dspace/dspace:dspace-8.1
+    restart: unless-stopped
+    depends_on:
+      - dspacedb
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/server/api || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+    networks:
+      - dspacenet
+    ports:
+      - "0.0.0.0:${REST_PORT}:8080"
+    environment:
+      dspace__P__dir: /dspace
+      dspace__P__name: '${DSPACE_NAME}'
+      dspace__P__server__P__url: http://${SERVER_IP}:${REST_PORT}/server
+      dspace__P__server__P__ssr__P__url: http://dspace:8080/server
+      dspace__P__ui__P__url: http://${SERVER_IP}:${UI_PORT}
+      db__P__url: 'jdbc:postgresql://dspacedb:5432/dspace'
+      db__P__password: '${POSTGRES_PASSWORD}'
+      solr__P__server: http://dspacesolr:8983/solr
+      proxies__P__trusted__P__ipranges: '172.16.0.0/12,10.0.0.0/8,192.168.0.0/16'
+      LOGGING_CONFIG: /dspace/config/log4j2-container.xml
+    stdin_open: true
+    tty: true
+    volumes:
+      - assetstore:/dspace/assetstore
+    entrypoint:
+      - /bin/bash
+      - '-c'
+      - |
+        while (!</dev/tcp/dspacedb/5432) > /dev/null 2>&1; do sleep 1; done;
+        /dspace/bin/dspace database migrate
+        java -jar /dspace/webapps/server-boot.jar --dspace.dir=/dspace
+
+  dspacedb:
+    image: dspace/dspace-postgres-pgcrypto:dspace-8.1
+    restart: unless-stopped
+    environment:
+      PGDATA: /pgdata
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+    networks:
+      - dspacenet
+    volumes:
+      - pgdata:/pgdata
+
+  dspacesolr:
+    image: dspace/dspace-solr:dspace-8.1
+    restart: unless-stopped
+    networks:
+      - dspacenet
+    working_dir: /var/solr/data
+    volumes:
+      - solr_data:/var/solr/data
+    entrypoint:
+      - /bin/bash
+      - '-c'
+      - |
+        init-var-solr
+        precreate-core authority /opt/solr/server/solr/configsets/authority
+        cp -r /opt/solr/server/solr/configsets/authority/* authority
+        precreate-core oai /opt/solr/server/solr/configsets/oai
+        cp -r /opt/solr/server/solr/configsets/oai/* oai
+        precreate-core search /opt/solr/server/solr/configsets/search
+        cp -r /opt/solr/server/solr/configsets/search/* search
+        precreate-core statistics /opt/solr/server/solr/configsets/statistics
+        cp -r /opt/solr/server/solr/configsets/statistics/* statistics
+        precreate-core qaevent /opt/solr/server/solr/configsets/qaevent
+        cp -r /opt/solr/server/solr/configsets/qaevent/* qaevent
+        precreate-core suggestion /opt/solr/server/solr/configsets/suggestion
+        cp -r /opt/solr/server/solr/configsets/suggestion/* suggestion
+        exec solr -f
+
+  dspace-angular:
+    build:
+      context: .
+      dockerfile: Dockerfile.angular
+    restart: unless-stopped
+    environment:
+      DSPACE_UI_SSL: "false"
+      DSPACE_UI_HOST: "0.0.0.0"
+      DSPACE_UI_PORT: "4000"
+      DSPACE_UI_NAMESPACE: "/"
+      DSPACE_REST_SSL: "false"
+      DSPACE_REST_HOST: "${SERVER_IP}"
+      DSPACE_REST_PORT: "${REST_PORT}"
+      DSPACE_REST_NAMESPACE: "/server"
+    extra_hosts:
+      - "${SERVER_IP}:host-gateway"
+    volumes:
+      - ./config.yml:/app/config/config.yml:ro
+      - ./assets/logo.png:/app/dist/browser/themes/dspace/assets/images/dspace-logo.png:ro
+      - ./assets/logo.png:/app/dist/browser/assets/images/dspace-logo.png:ro
+      - ./assets/favicon.png:/app/dist/browser/favicon.ico:ro
+    ports:
+      - "0.0.0.0:${UI_PORT}:4000"
+    depends_on:
+      dspace:
+        condition: service_healthy
+    networks:
+      - dspacenet
+
+volumes:
+  assetstore:
+  pgdata:
+  solr_data:

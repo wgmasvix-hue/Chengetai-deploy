@@ -45,6 +45,11 @@ prompt_if_empty ADMIN_EMAIL      "Administrator Email   "
 prompt_if_empty ADMIN_FIRST_NAME "Admin First Name      "
 prompt_if_empty ADMIN_LAST_NAME  "Admin Last Name       "
 
+# Ports are env-overridable (UI_PORT=4100 REST_PORT=8180 chengetai create ...)
+# so several deployments can share one server.
+UI_PORT="${UI_PORT:-4000}"
+REST_PORT="${REST_PORT:-8080}"
+
 DEPLOY_DIR="$DEPLOYMENTS_DIR/$NAME"
 mkdir -p "$DEPLOY_DIR"
 
@@ -57,6 +62,8 @@ mkdir -p "$DEPLOY_DIR"
     printf 'ADMIN_EMAIL=%q\n'       "$ADMIN_EMAIL"
     printf 'ADMIN_FIRST_NAME=%q\n'  "$ADMIN_FIRST_NAME"
     printf 'ADMIN_LAST_NAME=%q\n'   "$ADMIN_LAST_NAME"
+    printf 'UI_PORT=%q\n'           "$UI_PORT"
+    printf 'REST_PORT=%q\n'         "$REST_PORT"
     printf 'CREATED_AT=%q\n'        "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$DEPLOY_DIR/profile.env"
 
@@ -67,6 +74,7 @@ echo "  Platform    : $PLATFORM"
 echo "  Institution : $INSTITUTION"
 echo "  Repository  : $REPOSITORY"
 echo "  Admin       : $ADMIN_FIRST_NAME $ADMIN_LAST_NAME <$ADMIN_EMAIL>"
+echo "  Ports       : UI $UI_PORT, REST $REST_PORT"
 echo ""
 echo "Deploy it with: chengetai deploy $NAME"
 echo ""

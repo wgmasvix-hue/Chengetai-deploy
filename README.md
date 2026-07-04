@@ -9,10 +9,13 @@ commands, the same way you use `git` or `docker`.
 
 ## Install
 
-On a fresh Ubuntu 22.04/24.04 server:
+ChengetAi Deploy is an internal tool for ChengetAi engineers. On the
+target Ubuntu 22.04/24.04 server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/claude/dspace-deployment-review-98kzqb/install-online.sh | sudo bash
+git clone https://github.com/wgmasvix-hue/Chengetai-deploy.git
+cd Chengetai-deploy
+sudo bash install-cli.sh
 ```
 
 Then:
@@ -24,9 +27,11 @@ chengetai deploy    # deploy a repository
 
 `chengetai deploy` on a fresh server walks you through everything: it
 creates a deployment profile, checks the operating system, installs
-missing dependencies, downloads the deployment engine, deploys the
-platform, starts the services, creates the administrator account and
-prints the frontend and backend URLs.
+missing dependencies, instantiates the built-in deployment engine,
+starts the services, creates the administrator account and prints the
+frontend and backend URLs. The engine (compose stack, frontend image,
+branding) ships inside this repository — nothing is downloaded from
+other repositories at deploy time.
 
 ## Commands
 
@@ -43,7 +48,7 @@ prints the frontend and backend URLs.
 | `chengetai logs [name] [service...]` | Follow logs. |
 | `chengetai backup [name]` | Back up the database and uploaded files. |
 | `chengetai restore [name] [dir]` | Restore a backup (most recent by default). |
-| `chengetai edit <component> [name]` | Edit the logo, favicon or UI config, then rebuild the frontend. |
+| `chengetai edit <component> [name]` | Edit the logo, favicon, UI config or communities, then rebuild. |
 | `chengetai update` | Update ChengetAi Deploy and its deployments. |
 | `chengetai remove [name]` | Remove a deployment. |
 | `chengetai version` | Show version information. |
@@ -73,16 +78,21 @@ chengetai deploy dspace
 ```
 chengetai            CLI entry point (dispatcher)
 VERSION              Current version
-install-online.sh    curl-able installer for fresh servers
-install-cli.sh       installer for local/offline checkouts
+install-cli.sh       installer (run from a clone of this repo)
 lib/                 One script per command + utils.sh helpers
-templates/           Platform plugins (dspace, koha, moodle, ojs)
+templates/           Platform plugins; templates/dspace/engine/ is the
+                     built-in DSpace stack (compose, Dockerfile, branding)
 deployments/         Deployment profiles and engines (created at runtime)
+api/                 ChengetAi Deploy API (dashboard backend)
+dashboard/           Engineer dashboard (Angular)
 ```
 
 Each deployment lives in `deployments/<name>/` with a `profile.env`
-(platform, institution and administrator details — never the password),
-the platform engine, and its `backups/`.
+(platform, institution, administrator details and ports — never the
+password), its instantiated engine (including a generated `.env` with a
+random database password), and its `backups/`. Deployments run as
+separate compose projects, so several can share a server when their
+`UI_PORT`/`REST_PORT` differ.
 
 ## Requirements
 
