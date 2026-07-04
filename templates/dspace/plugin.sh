@@ -205,6 +205,49 @@ plugin_restore() {
     echo ""
 }
 
+# plugin_edit <component>
+# Opens the file behind a UI component for editing, then offers to rebuild
+# and restart the frontend so the change goes live.
+#
+# The frontend runs from the prebuilt dspace-angular image with branding
+# files layered on top (see Dockerfile.angular), so only those files are
+# editable. Editing page templates (homepage, footer, news, css) would
+# require building the UI from source, which this engine does not do.
+plugin_edit() {
+    require_engine
+    local component="$1" file
+
+    case "$component" in
+        logo)    file="$(engine_dir)/assets/bpoly-logo.svg" ;;
+        favicon) file="$(engine_dir)/assets/favicon.svg" ;;
+        config)  file="$(engine_dir)/config.yml" ;;
+        homepage|footer|news|css)
+            error "'$component' cannot be edited: the frontend is a prebuilt image and only its branding files (logo, favicon, config) are replaceable. Editing page content requires a source build of dspace-angular."
+            ;;
+        *)
+            error "Unknown component '$component'. Editable components: logo favicon config"
+            ;;
+    esac
+
+    [ -f "$file" ] || error "File not found: $file"
+
+    echo "Opening: $file"
+    echo ""
+    "${EDITOR:-nano}" "$file"
+
+    echo ""
+    if confirm "Rebuild the frontend now so the change goes live?"; then
+        require_docker
+        info "Rebuilding frontend..."
+        pcompose build dspace-angular
+        pcompose up -d dspace-angular
+        echo ""
+        info "Frontend rebuilt and restarted."
+    else
+        echo "Apply later with: chengetai update $DEPLOY_NAME"
+    fi
+}
+
 plugin_update() {
     local engine
     engine=$(engine_dir)

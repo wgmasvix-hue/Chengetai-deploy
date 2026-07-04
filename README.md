@@ -43,6 +43,7 @@ prints the frontend and backend URLs.
 | `chengetai logs [name] [service...]` | Follow logs. |
 | `chengetai backup [name]` | Back up the database and uploaded files. |
 | `chengetai restore [name] [dir]` | Restore a backup (most recent by default). |
+| `chengetai edit <component> [name]` | Edit the logo, favicon or UI config, then rebuild the frontend. |
 | `chengetai update` | Update ChengetAi Deploy and its deployments. |
 | `chengetai remove [name]` | Remove a deployment. |
 | `chengetai version` | Show version information. |

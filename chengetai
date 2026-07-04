@@ -30,6 +30,7 @@ Usage:
  chengetai logs [name] [service...]   View logs
  chengetai backup [name]              Create a backup
  chengetai restore [name] [dir]       Restore a backup
+ chengetai edit <component> [name]    Edit the logo, favicon or UI config
  chengetai update                     Update ChengetAi Deploy and its deployments
  chengetai remove [name]              Remove a deployment
  chengetai version                    Show version information
@@ -46,7 +47,7 @@ CMD="${1:-}"
 
 case "$CMD" in
 
-install|doctor|create|deploy|start|stop|restart|status|logs|backup|restore|update|remove)
+install|doctor|create|deploy|start|stop|restart|status|logs|backup|restore|edit|update|remove)
     exec bash "$CHENGETAI_HOME/lib/$CMD.sh" "$@"
     ;;
 
