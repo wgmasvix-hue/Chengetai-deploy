@@ -98,18 +98,18 @@ performs them).
 
 ## 6. Version 1.0 roadmap
 
-Goal: a dependable internal tool for ChengetAi engineers.
+**Status: items 1–5 delivered in v2.1.0.**
 
-1. **Deploy API** — `POST /api/deployments` and lifecycle actions that
-   shell out to the CLI, so the dashboard can create/start/stop/backup.
-2. **New-Deployment wizard** — dashboard form → deploy API.
-3. **Users page + user CRUD API** — admin manages engineers/viewers.
-4. **Settings page** — change password, API/CORS config surface.
-5. **Harden deployment** — reverse proxy + TLS recipe, systemd units for
-   API and dashboard, gitleaks in CI.
-6. **One real end-to-end DSpace deploy** driven from the dashboard on a
-   campus server (the environment here blocks Docker Hub, so this must be
-   validated on real infrastructure).
+1. ✅ **Deploy API** — `POST /api/deployments` + lifecycle actions shell
+   out to the CLI; the dashboard triggers real deployments.
+2. ✅ **New-Deployment wizard** — dashboard form → deploy API, live job log.
+3. ✅ **Users page + user CRUD API** — admin manages engineers/viewers.
+4. ✅ **Settings page** — change password; account info.
+5. ✅ **Harden deployment** — systemd unit (localhost-bound API), nginx +
+   TLS recipe, firewall guidance, gitleaks in CI (see `deploy/`).
+6. ⏳ **One real end-to-end DSpace deploy from the dashboard** — must be
+   validated on a campus server (this environment blocks Docker Hub).
+
 
 ## 7. Version 2.0 vision
 

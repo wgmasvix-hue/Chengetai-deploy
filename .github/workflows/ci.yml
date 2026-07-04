@@ -53,13 +53,19 @@ jobs:
       - run: npx ng build
 
   security:
-    name: Dependency audit
+    name: Security scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: npm audit (advisory)
         run: |
           (cd api && npm install --package-lock-only && npm audit --audit-level=high) || true

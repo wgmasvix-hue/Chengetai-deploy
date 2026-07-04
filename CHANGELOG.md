@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.1.0
+
+- The dashboard can now DEPLOY, not just observe: POST /api/deployments
+  creates a profile and runs the deploy as a tracked background job; the
+  New Deployment wizard streams the live job log. Every action shells out
+  to the CLI, keeping one code path for deployment logic.
+- Deployment lifecycle over REST: start/stop/restart/backup/update as
+  jobs, synchronous status, delete (with purge). Jobs API tails output
+  incrementally.
+- User management (admin): list/create/update/delete with role
+  validation and a last-admin guard. Users and Settings dashboard pages.
+- Hardening: systemd unit (API bound to localhost), nginx reverse-proxy
+  + TLS recipe, firewall guidance (deploy/), and gitleaks secret scan in
+  CI. See deploy/README.md.
+
 ## 2.0.0
 
 - ChengetAi Deploy is formally an ORCHESTRATION platform: the dspace

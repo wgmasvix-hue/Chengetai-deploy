@@ -1,0 +1,26 @@
+# ChengetAi Deploy API — systemd unit.
+# Install:
+#   sudo cp deploy/chengetai-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now chengetai-api
+[Unit]
+Description=ChengetAi Deploy API
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/chengetai-deploy/api
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+# Configuration lives in /opt/chengetai-deploy/api/.env (chmod 600).
+EnvironmentFile=-/opt/chengetai-deploy/api/.env
+# Bind to localhost only; expose through the reverse proxy (see nginx.conf).
+Environment=PORT=3000
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
