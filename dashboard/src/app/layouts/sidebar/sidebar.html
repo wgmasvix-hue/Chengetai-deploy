@@ -10,31 +10,27 @@
 
   <nav>
 
-    <a class="active">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
       🏠 Dashboard
     </a>
 
-    <a>
+    <a routerLink="/new-deployment" routerLinkActive="active">
       🚀 Deploy
     </a>
 
-    <a>
+    <a routerLink="/deployments" routerLinkActive="active">
       📚 Repositories
     </a>
 
-    <a>
+    <a routerLink="/server" routerLinkActive="active">
       🖥 Servers
     </a>
 
-    <a>
-      📄 Logs
-    </a>
-
-    <a>
+    <a routerLink="/backups" routerLinkActive="active">
       💾 Backups
     </a>
 
-    <a>
+    <a routerLink="/settings" routerLinkActive="active">
       ⚙ Settings
     </a>
 
