@@ -2,21 +2,24 @@
 
 ## 2.0.0
 
-- The DSpace engine is now BUILT IN (templates/dspace/engine/): compose
-  stack, frontend Dockerfile, branding and community setup ship inside
-  this repository. Deploys no longer clone an external engine repo.
-- Each deployment gets a generated random database password (stored only
-  in its engine/.env, chmod 600) — no shared secrets in git.
-- Deployments run as separate compose projects (chengetai-<name>) with
-  per-profile UI_PORT/REST_PORT, so several repositories can share one
-  server.
-- Community structure is data-driven: edit communities.txt
-  (chengetai edit communities) and redeploy.
+- ChengetAi Deploy is formally an ORCHESTRATION platform: the dspace
+  plugin clones, configures, brands, deploys and maintains the canonical
+  Bulawayo Polytechnic DSpace repository instead of duplicating its
+  deployment logic. The parametrisation this needs (generated database
+  password, UI_PORT/REST_PORT, DSPACE_NAME) was contributed upstream to
+  the reference repository with backward-compatible defaults.
+- Per-deployment branding lives in deployments/<name>/branding/ and is
+  applied over the engine on deploy/update, so canonical updates never
+  conflict with local branding.
+- Deployment volumes are namespaced per deployment
+  (COMPOSE_PROJECT_NAME=chengetai-<name>); profiles carry UI_PORT and
+  REST_PORT.
+- Every platform template now ships machine-readable metadata
+  (templates/<name>/plugin.json); nextcloud, wordpress and roserag are
+  registered as planned platforms alongside koha, moodle and ojs.
 - Removed the public curl installer (install-online.sh) — ChengetAi
   Deploy is an internal tool; install from a git clone with
   install-cli.sh.
-- Legacy deployments made with the external engine are detected and get
-  migration instructions (backup, remove, deploy, restore).
 
 
 ## 1.2.0

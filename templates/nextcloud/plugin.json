@@ -1,0 +1,8 @@
+{
+  "name": "nextcloud",
+  "displayName": "Nextcloud",
+  "description": "Nextcloud file sync and collaboration",
+  "status": "coming-soon",
+  "category": "collaboration",
+  "operations": []
+}

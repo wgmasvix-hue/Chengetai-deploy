@@ -1,0 +1,21 @@
+{
+  "name": "dspace",
+  "displayName": "DSpace 8",
+  "description": "DSpace 8 institutional repository",
+  "status": "available",
+  "category": "repository",
+  "operations": [
+    "deploy",
+    "start",
+    "stop",
+    "restart",
+    "status",
+    "logs",
+    "backup",
+    "restore",
+    "update",
+    "remove",
+    "edit"
+  ],
+  "reference": "https://github.com/wgmasvix-hue/bulawayo-polytechnic-dspace-"
+}
