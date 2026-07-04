@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment';
+import { resolveApiUrl } from './runtime-config';
 import {
   DashboardStats, ServerInfo, Deployment, Plugin, Job, User, NewDeploymentRequest,
 } from '../models/api.models';
@@ -9,10 +9,9 @@ import {
 export class ApiService {
   private http = inject(HttpClient);
 
-  // Same host the dashboard is served from, API on port 3000 — so the
-  // dashboard works on any server without a hardcoded address.
-  private apiUrl = environment.apiUrl
-    || `${window.location.protocol}//${window.location.hostname}:3000/api`;
+  // Resolved at runtime from public/config.js so one build can point at
+  // any backend (edit config.js on the host, no rebuild).
+  private apiUrl = resolveApiUrl();
 
   // ── Dashboard / catalogue ──
   getHealth() { return this.http.get<{ status: string; version: string }>(`${this.apiUrl}/health`); }
