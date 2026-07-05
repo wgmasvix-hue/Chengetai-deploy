@@ -55,6 +55,13 @@ say "Building dashboard (~1 min)..."
 cd "$DEST/dashboard"
 npm install --no-audit --no-fund >/dev/null
 npm run build >/dev/null
+# Serve the dashboard and API on the same origin via nginx: the browser
+# calls a relative /api, which nginx proxies to the localhost API. No
+# exposed :3000 port and no CORS to configure.
+DIST="$DEST/dashboard/dist/chengetai-dashboard/browser"
+cat > "$DIST/config.js" <<'CFG'
+window.__CHENGETAI_CONFIG__ = { apiUrl: "/api" };
+CFG
 
 # 5. Nginx --------------------------------------------------------------------
 say "Configuring nginx..."
