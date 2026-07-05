@@ -1,7 +1,44 @@
 // Deployments on this server, read from the CLI's deployments directory
 // (deployments/<name>/profile.env). The API reads what the CLI manages —
 // one source of truth on disk, no duplicated state.
-const fs = require('fs');
+const fs = require("fs");
+const path = require("path");
+
+const ROOT = "/opt/deployments";
+
+function createDeployment(name) {
+    const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-");
+
+    const base = path.join(ROOT, slug);
+
+    const folders = [
+        "",
+        "config",
+        "docker",
+        "branding",
+        "ssl",
+        "logs",
+        "backups",
+        "data"
+    ];
+
+    folders.forEach(folder => {
+        fs.mkdirSync(path.join(base, folder), {
+            recursive: true
+        });
+    });
+
+    return {
+        slug,
+        path: base
+    };
+}
+
+module.exports = {
+    createDeployment
+};const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 

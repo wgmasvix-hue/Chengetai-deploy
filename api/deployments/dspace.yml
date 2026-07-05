@@ -1,0 +1,24 @@
+platform: dspace
+
+institution:
+  name: University of Zimbabwe
+  shortname: uz
+
+domain: repository.uz.ac.zw
+
+email: admin@uz.ac.zw
+
+version: "8.1"
+
+branding:
+  enabled: true
+
+ssl:
+  enabled: true
+
+database:
+  password: changeMe123
+
+admin:
+  email: admin@uz.ac.zw
+  password: Admin@123
