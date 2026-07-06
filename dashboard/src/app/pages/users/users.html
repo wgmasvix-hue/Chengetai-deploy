@@ -1,0 +1,34 @@
+<div class="head">
+  <h1>👥 Users</h1>
+  <button (click)="showForm.set(!showForm())">{{ showForm() ? 'Cancel' : '+ Add User' }}</button>
+</div>
+
+<form class="form" *ngIf="showForm()" (ngSubmit)="add()">
+  <input placeholder="Email" name="email" type="email" [(ngModel)]="draft.email" required />
+  <input placeholder="Password" name="password" type="password" [(ngModel)]="draft.password" required />
+  <select name="role" [(ngModel)]="draft.role">
+    <option value="viewer">Viewer</option>
+    <option value="engineer">Engineer</option>
+    <option value="admin">Admin</option>
+  </select>
+  <button type="submit">Create</button>
+</form>
+
+<p class="error" *ngIf="error()">{{ error() }}</p>
+
+<table class="tbl">
+  <thead><tr><th>Email</th><th>Role</th><th></th></tr></thead>
+  <tbody>
+    <tr *ngFor="let u of users()">
+      <td>{{ u.email }}</td>
+      <td>
+        <select [value]="u.role" (change)="setRole(u, $any($event.target).value)">
+          <option value="viewer">viewer</option>
+          <option value="engineer">engineer</option>
+          <option value="admin">admin</option>
+        </select>
+      </td>
+      <td><button class="danger" (click)="remove(u)">Remove</button></td>
+    </tr>
+  </tbody>
+</table>

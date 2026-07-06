@@ -11,9 +11,10 @@ COMPONENT="${1:-}"
 
 if [ -z "$COMPONENT" ]; then
     echo "Usage:"
-    echo "  chengetai edit logo    [name]"
-    echo "  chengetai edit favicon [name]"
-    echo "  chengetai edit config  [name]"
+    echo "  chengetai edit logo        [name]"
+    echo "  chengetai edit favicon     [name]"
+    echo "  chengetai edit config      [name]"
+    echo "  chengetai edit communities [name]"
     exit 1
 fi
 

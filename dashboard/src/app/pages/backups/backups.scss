@@ -1,0 +1,13 @@
+h1 { color: #e2e8f0; }
+.muted { color: #94a3b8; }
+code { background: #0b1220; padding: .1rem .3rem; border-radius: 4px; color: #cbd5e1; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin: 1rem 0; }
+.card { background: #1e293b; border-radius: 12px; padding: 1.25rem; }
+.card h3 { color: #e2e8f0; }
+.card button { margin-top: .6rem; padding: .5rem .9rem; border: 0; border-radius: 8px; background: #3b82f6; color: #fff; cursor: pointer; }
+.card button:disabled { opacity: .6; }
+.progress { margin-top: 1.5rem; }
+.progress h3 { color: #e2e8f0; }
+.badge { font-size: .75rem; padding: .15rem .6rem; border-radius: 999px; background: #475569; color: #fff; }
+.badge.ok { background: #16a34a; } .badge.fail { background: #dc2626; }
+.log { background: #0b1220; color: #cbd5e1; padding: 1rem; border-radius: 10px; max-height: 300px; overflow: auto; white-space: pre-wrap; font-size: .8rem; }

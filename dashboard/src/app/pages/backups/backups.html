@@ -1,1 +1,18 @@
-<p>backups works!</p>
+<h1>💾 Backups</h1>
+<p class="muted">Back up a deployment\u2019s database and uploaded files. Backups are stored on the server under each deployment\u2019s <code>backups/</code> folder; restore from the terminal with <code>chengetai restore &lt;name&gt;</code>.</p>
+
+<div class="cards">
+  <div class="card" *ngFor="let d of deployments()">
+    <h3>{{ d.repository || d.name }}</h3>
+    <p class="muted">{{ d.platform }} \u00b7 {{ d.institution }}</p>
+    <button (click)="backup(d)" [disabled]="jobStatus() === 'running'">Backup now</button>
+  </div>
+  <p class="muted" *ngIf="!deployments().length">No deployments to back up yet.</p>
+</div>
+
+<div class="progress" *ngIf="activeName()">
+  <h3>Backup: {{ activeName() }}
+    <span class="badge" [class.ok]="jobStatus()==='success'" [class.fail]="jobStatus()==='failed'">{{ jobStatus() }}</span>
+  </h3>
+  <pre class="log">{{ jobLog().join('\n') }}</pre>
+</div>

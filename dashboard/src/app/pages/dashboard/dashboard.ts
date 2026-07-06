@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../services/api';
+import { DashboardStats, Deployment } from '../../models/api.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -10,34 +11,19 @@ import { ApiService } from '../../services/api';
   styleUrl: './dashboard.scss'
 })
 export class Dashboard implements OnInit {
-
   private api = inject(ApiService);
 
-  dashboard:any = {};
-  servers:any[] = [];
+  stats = signal<DashboardStats | null>(null);
+  deployments = signal<Deployment[]>([]);
+  loading = signal(true);
 
   ngOnInit(): void {
-    console.log('Loading dashboard...');
-
     this.api.getDashboard().subscribe({
-      next: (data) => {
-        console.log('Dashboard:', data);
-        this.dashboard = data;
-      },
-      error: (err) => {
-        console.error('Dashboard error:', err);
-      }
+      next: (data) => { this.stats.set(data); this.loading.set(false); },
+      error: () => this.loading.set(false)
     });
-
-    this.api.getServers().subscribe({
-      next: (data) => {
-        console.log('Servers:', data);
-        this.servers = data;
-      },
-      error: (err) => {
-        console.error('Servers error:', err);
-      }
+    this.api.getDeployments().subscribe({
+      next: (data) => this.deployments.set(data)
     });
   }
-
 }

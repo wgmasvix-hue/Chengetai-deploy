@@ -1,72 +1,58 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  ChengetAi Deploy — Online Installer
+#  ChengetAi Deploy — one-command installer.
 #
-#  Install with one command on a fresh Ubuntu server:
+#  Install (or update) the whole platform on a fresh Ubuntu server:
+#
 #    curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/claude/dspace-deployment-review-98kzqb/install-online.sh | sudo bash
 #
-#  Then:
-#    chengetai doctor
-#    chengetai deploy
+#  Add DSpace in the same run:
+#    ... | sudo bash -s -- --with-dspace
+#
+#  Safe to re-run: it updates in place and never touches your existing
+#  deployments, admin password, or API data (all kept out of git). If an
+#  SSH drop interrupts it, just run the same command again — it resumes.
 # =============================================================================
 set -euo pipefail
 
 REPO_URL="https://github.com/wgmasvix-hue/Chengetai-deploy.git"
-# TODO: switch to 'main' once the review branch is merged.
 BRANCH="${CHENGETAI_BRANCH:-claude/dspace-deployment-review-98kzqb}"
-INSTALL_DIR="${CHENGETAI_INSTALL_DIR:-/opt/chengetai-deploy}"
+DEST="/opt/chengetai-deploy"
 
-echo ""
-echo "=========================================================="
-echo "        ChengetAi Deploy — Installer"
-echo "=========================================================="
-echo ""
+GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+say()  { echo -e "${GREEN}[+]${NC} $*"; }
+warn() { echo -e "${YELLOW}[!]${NC} $*"; }
 
-if [ "$(id -u)" != "0" ]; then
-    echo "This installer needs root. Re-run it as:"
-    echo ""
-    echo "  curl -fsSL <this-url> | sudo bash"
-    echo ""
-    exit 1
+if [ "$(id -u)" != 0 ]; then
+  echo "This installer needs root. Re-run:"
+  echo "  curl -fsSL <url> | sudo bash"
+  exit 1
 fi
 
-if ! command -v git >/dev/null 2>&1; then
-    echo "[1/4] Installing git..."
-    apt-get update -qq || true
-    DEBIAN_FRONTEND=noninteractive apt-get install -y git >/dev/null
-else
-    echo "[1/4] git already installed."
+# 1. Prerequisites for fetching the code -------------------------------------
+if ! command -v git >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
+  say "Installing git and curl..."
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y git curl >/dev/null
 fi
+# tmux so long installs survive a dropped SSH session.
+command -v tmux >/dev/null 2>&1 || apt-get install -y tmux >/dev/null 2>&1 || true
 
-if [ -d "$INSTALL_DIR/.git" ]; then
-    echo "[2/4] Updating existing installation at $INSTALL_DIR..."
-    git -C "$INSTALL_DIR" fetch origin "$BRANCH"
-    git -C "$INSTALL_DIR" checkout "$BRANCH"
-    git -C "$INSTALL_DIR" pull --ff-only origin "$BRANCH"
-else
-    echo "[2/4] Downloading ChengetAi Deploy to $INSTALL_DIR..."
-    git clone -b "$BRANCH" "$REPO_URL" "$INSTALL_DIR"
+# 2. Fetch or update the code, preserving runtime state ----------------------
+# Using init+fetch+checkout works whether $DEST is absent, a fresh dir, an
+# older non-git install, or an existing checkout — and leaves untracked
+# runtime state (deployments/, api/.env, api/data) in place.
+say "Fetching ChengetAi Deploy ($BRANCH) into $DEST..."
+mkdir -p "$DEST"
+cd "$DEST"
+if [ ! -d .git ]; then
+  git init -q
+  git remote add origin "$REPO_URL" 2>/dev/null || true
 fi
+git remote set-url origin "$REPO_URL"
+git fetch --depth 1 origin "$BRANCH"
+git checkout -qf -B "$BRANCH" FETCH_HEAD
+say "Code ready."
 
-echo "[3/4] Creating launcher..."
-chmod +x "$INSTALL_DIR/chengetai"
-ln -sf "$INSTALL_DIR/chengetai" /usr/local/bin/chengetai
-
-echo "[4/4] Verifying installation..."
-if ! command -v chengetai >/dev/null 2>&1; then
-    echo "Installation failed: 'chengetai' is not on the PATH."
-    exit 1
-fi
-
-VERSION=$(cat "$INSTALL_DIR/VERSION" 2>/dev/null || echo unknown)
-
-echo ""
-echo "=========================================================="
-echo " ChengetAi Deploy v$VERSION Installed Successfully"
-echo "=========================================================="
-echo ""
-echo "Get started:"
-echo ""
-echo "  chengetai doctor    # check the system, install dependencies"
-echo "  chengetai deploy    # deploy a repository"
-echo ""
+# 3. Hand off to the platform bootstrap (node, nginx, API, dashboard) ---------
+exec bash "$DEST/deploy/bootstrap.sh" "$@"

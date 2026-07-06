@@ -30,7 +30,7 @@ Usage:
  chengetai logs [name] [service...]   View logs
  chengetai backup [name]              Create a backup
  chengetai restore [name] [dir]       Restore a backup
- chengetai edit <component> [name]    Edit the logo, favicon or UI config
+ chengetai edit <component> [name]    Edit logo, favicon, config or communities
  chengetai update                     Update ChengetAi Deploy and its deployments
  chengetai remove [name]              Remove a deployment
  chengetai version                    Show version information

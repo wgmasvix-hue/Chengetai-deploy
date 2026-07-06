@@ -1,0 +1,14 @@
+h1 { color: #e2e8f0; }
+.form { max-width: 640px; display: flex; flex-direction: column; gap: .4rem; }
+.form .grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+label { color: #cbd5e1; font-size: .85rem; margin-top: .5rem; }
+label small { color: #64748b; }
+input, select { padding: .6rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; width: 100%; box-sizing: border-box; }
+button { margin-top: 1rem; padding: .8rem; border: 0; border-radius: 8px; background: #3b82f6; color: #fff; font-weight: 600; cursor: pointer; }
+button:disabled { opacity: .6; }
+.error { color: #f87171; }
+.progress { margin-top: 1.5rem; }
+.progress h3 { color: #e2e8f0; }
+.badge { font-size: .75rem; padding: .15rem .6rem; border-radius: 999px; background: #475569; color: #fff; }
+.badge.ok { background: #16a34a; } .badge.fail { background: #dc2626; }
+.log { background: #0b1220; color: #cbd5e1; padding: 1rem; border-radius: 10px; max-height: 400px; overflow: auto; white-space: pre-wrap; font-size: .8rem; }
