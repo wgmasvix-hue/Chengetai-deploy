@@ -1,0 +1,13 @@
+name: DSpace
+
+version: 3.0
+
+author: ChengetAi Labs
+
+description: Institutional Repository
+
+command: deploy-dspace
+
+docker: true
+
+status: stable

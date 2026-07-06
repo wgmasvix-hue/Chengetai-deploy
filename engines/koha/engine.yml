@@ -1,0 +1,13 @@
+name: Koha
+
+version: 1.0
+
+author: ChengetAi Labs
+
+description: Intelligent Library Management System
+
+command: deploy-koha
+
+docker: true
+
+status: stable

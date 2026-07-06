@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: koha-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: ${TZ}
+    volumes:
+      - koha_db:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  memcached:
+    image: memcached:latest
+    container_name: koha-memcached
+    restart: unless-stopped
+    ports:
+      - "11211:11211"
+  opensearch:
+    image: opensearchproject/opensearch:2
+    container_name: koha-opensearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "ChengetAi@2026"
+      plugins.security.disabled: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+
+volumes:
+  koha_db:
