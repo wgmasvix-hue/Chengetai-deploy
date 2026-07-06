@@ -17,6 +17,26 @@ institutional platforms — starting with **DSpace 8** repositories — on any
 Ubuntu server. Install it once, then manage everything with simple
 commands, the same way you use `git` or `docker`.
 
+## Install (one command)
+
+On a fresh Ubuntu 22.04/24.04 server:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/claude/dspace-deployment-review-98kzqb/install-online.sh | sudo bash
+```
+
+Add a DSpace repository in the same run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/claude/dspace-deployment-review-98kzqb/install-online.sh | sudo bash -s -- --with-dspace
+```
+
+It installs the CLI, API and dashboard, wires nginx, and prints your
+dashboard URL and admin login. **Safe to re-run** — it updates in place
+and never touches your existing deployments or admin password. If an SSH
+drop interrupts it, run the same command again and it resumes. (Tip: run
+inside `tmux` so a dropped connection can't interrupt it at all.)
+
 ## Install
 
 ChengetAi Deploy is an internal tool for ChengetAi engineers. On the

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0
+
+- One-command installer (install-online.sh): curl | sudo bash installs
+  or updates the whole platform. Idempotent and resumable — safe to
+  re-run after an SSH drop; preserves existing deployments, admin
+  password and API data (all kept out of git). Optional --with-dspace
+  deploys a repository in the same run. Installs tmux so long runs
+  survive dropped connections.
+
 ## 2.1.0
 
 - The dashboard can now DEPLOY, not just observe: POST /api/deployments
