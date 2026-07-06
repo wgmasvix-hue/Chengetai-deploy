@@ -1,7 +1,7 @@
 # ChengetAi Deploy — Project Audit
 
 Date: 2026-07-04 · Auditor: Lead Architecture Review · Scope: full repository
-plus the reference DSpace repository (`wgmasvix-hue/Bulawayo-polytechnic-DSPACE-`).
+plus the reference DSpace repository configured in `templates/dspace/plugin.sh`.
 
 ## 1. Architecture overview (as audited)
 
@@ -25,7 +25,7 @@ Two competing directions existed in-tree:
 - **Branch commit “v2.0.0 built-in engine”**: the DSpace compose stack,
   Dockerfile and branding copied into `templates/dspace/engine/` — the CLI
   repo becomes self-contained but **duplicates** the deployment logic that
-  the Bulawayo Polytechnic DSpace repository already maintains.
+  the canonical DSpace reference repository already maintains.
 - **Platform principle (this brief)**: ChengetAi Deploy is an
   *orchestration* platform. The reference repository is the canonical
   DSpace implementation; ChengetAi clones → configures → brands → deploys

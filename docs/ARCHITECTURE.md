@@ -29,8 +29,8 @@ implementations.
 └───────────────┬─────────────────────────────────────────────┘
                 │ clone + configure + docker compose
 ┌───────────────▼─────────────────────────────────────────────┐
-│  Canonical reference repositories (e.g. Bulawayo Polytechnic │
-│  DSpace) — the actual deployment logic, per platform         │
+│  Canonical reference repositories (e.g. your DSpace repo)   │
+│  — the actual deployment logic, per platform                 │
 └─────────────────────────────────────────────────────────────┘
 ```
 

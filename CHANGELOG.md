@@ -28,7 +28,7 @@
 
 - ChengetAi Deploy is formally an ORCHESTRATION platform: the dspace
   plugin clones, configures, brands, deploys and maintains the canonical
-  Bulawayo Polytechnic DSpace repository instead of duplicating its
+  DSpace reference repository instead of duplicating its
   deployment logic. The parametrisation this needs (generated database
   password, UI_PORT/REST_PORT, DSPACE_NAME) was contributed upstream to
   the reference repository with backward-compatible defaults.

@@ -19,7 +19,7 @@ separation of concerns:
 
 The defining decision: **ChengetAi orchestrates canonical reference
 repositories; it does not reimplement deployment logic.** The DSpace
-plugin clones and drives the Bulawayo Polytechnic repository. Parametrising
+plugin clones and drives the configured reference repository. Parametrising
 that repository (ports, instance name, generated secret) was done *in the
 reference repository*, upstream of ChengetAi.
 

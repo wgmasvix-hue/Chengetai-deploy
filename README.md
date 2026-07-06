@@ -5,8 +5,8 @@ One Command. Complete Deployment.
 ChengetAi Deploy is an **orchestration platform** for deploying and
 operating institutional platforms — starting with **DSpace 8** — on any
 Ubuntu server. It clones, configures, brands, deploys, verifies, monitors
-and maintains canonical open-source repositories (DSpace via the Bulawayo
-Polytechnic reference repository); it never reimplements the deployment
+and maintains canonical open-source repositories (DSpace via a
+configurable reference repository); it never reimplements the deployment
 logic it drives.
 
 It ships three tiers — an Angular dashboard, a Node/Express REST API, and a
