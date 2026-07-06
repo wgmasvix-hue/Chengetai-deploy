@@ -1,0 +1,49 @@
+name: koha-engine
+version: "1.0.0"
+display_name: "ChengetAi Koha Engine"
+description: >
+  Production-ready Koha ILS deployment engine for ChengetAi Deploy.
+  Delivers a complete Koha 24.05 stack — MariaDB 11, OpenSearch 2,
+  Memcached, and an Nginx TLS reverse proxy — in a single command.
+
+platform: koha
+koha_version: "24.05"
+koha_package_suite: "24.05"
+
+stack:
+  - service: koha
+    image: "built from docker/Dockerfile"
+    description: "Koha 24.05 ILS (Apache + Plack + Zebra)"
+  - service: db
+    image: "mariadb:11"
+    description: "MariaDB 11 — Koha database"
+  - service: opensearch
+    image: "opensearchproject/opensearch:2"
+    description: "OpenSearch 2 — catalogue search index"
+  - service: memcached
+    image: "memcached:1.6"
+    description: "Memcached — session and query cache"
+  - service: nginx
+    image: "nginx:stable-alpine"
+    description: "Nginx — TLS reverse proxy (OPAC + Staff)"
+
+ports:
+  http: 80
+  https_opac: 443
+  https_staff: 8443
+
+volumes:
+  - koha_db_data       # MariaDB data
+  - koha_os_data       # OpenSearch index
+  - koha_uploads       # Koha uploaded files
+  - koha_config        # Koha configuration (/etc/koha/sites/)
+  - koha_ssl           # Nginx TLS certificates
+
+requires:
+  docker: ">=24.0"
+  docker_compose: ">=2.20"
+  memory_gb: 4
+  disk_gb: 20
+  os: "Ubuntu 22.04 / 24.04"
+
+entry_point: scripts/install.sh

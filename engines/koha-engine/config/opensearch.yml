@@ -1,0 +1,37 @@
+# ============================================================
+#  ChengetAi Koha Engine — OpenSearch Configuration
+#  Single-node deployment for use within the Docker Compose network.
+#  Security plugin is disabled; access is restricted to the internal
+#  Docker bridge network (not exposed to the host).
+# ============================================================
+
+cluster.name: koha-search
+node.name: koha-os-node-1
+
+# Single-node discovery (no cluster formation required)
+discovery.type: single-node
+
+# Network — bind to all interfaces inside the container
+network.host: 0.0.0.0
+
+# HTTP API
+http.port: 9200
+
+# Transport (node-to-node; single node so this is unused but set explicitly)
+transport.port: 9300
+
+# Disable the security plugin (TLS + auth) for the Docker-internal network.
+# The OpenSearch port is NOT published on the host, so it is only reachable
+# from other containers on the koha-net bridge.
+plugins.security.disabled: true
+
+# Path settings (mapped to Docker volume)
+path.data: /usr/share/opensearch/data
+path.logs: /usr/share/opensearch/logs
+
+# Memory settings
+bootstrap.memory_lock: false
+
+# Performance tuning for small deployments
+indices.memory.index_buffer_size: 10%
+thread_pool.write.queue_size: 200
