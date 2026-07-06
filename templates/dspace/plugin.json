@@ -17,5 +17,10 @@
     "remove",
     "edit"
   ],
-  "reference": "https://github.com/YOUR-ORG/YOUR-DSPACE-REPO"
+  "images": {
+    "backend":  "dspace/dspace:dspace-8_x",
+    "frontend": "dspace/dspace-angular:dspace-8_x",
+    "database": "dspace/dspace-postgres-pgcrypto:latest",
+    "solr":     "dspace/dspace-solr:dspace-8_x"
+  }
 }

@@ -56,12 +56,13 @@ repository. `koha`, `moodle`, `ojs`, `nextcloud`, `wordpress` and
 
 ```
 create   → deployments/<name>/profile.env  (institution, admin, ports)
-deploy   → clone reference repo → deployments/<name>/engine/
-           → apply branding from deployments/<name>/branding/
-           → run reference installer with UI_PORT/REST_PORT/DSPACE_NAME,
-             generated DB secret, admin env vars, per-deployment
-             COMPOSE_PROJECT_NAME
-           → installer waits on the backend health endpoint (verify)
+deploy   → generate deployments/<name>/engine/docker-compose.yml
+           → generate deployments/<name>/engine/local.cfg
+           → generate deployments/<name>/engine/.env  (random DB password, chmod 600)
+           → pull all 4 DSpace 8 images in parallel (backend, angular, postgres, solr)
+           → docker compose up -d (health-gated ordering)
+           → poll REST health endpoint until ready (~3-5 min after pull)
+           → create administrator account via dspace create-administrator CLI
 start/stop/restart/status/logs/backup/restore/update/remove/edit
            → docker compose against deployments/<name>/engine/
 ```
