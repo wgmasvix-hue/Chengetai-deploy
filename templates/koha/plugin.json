@@ -2,7 +2,20 @@
   "name": "koha",
   "displayName": "Koha",
   "description": "Koha library management system",
-  "status": "coming-soon",
+  "status": "available",
   "category": "library",
-  "operations": []
+  "operations": [
+    "deploy",
+    "start",
+    "stop",
+    "restart",
+    "status",
+    "logs",
+    "backup",
+    "restore",
+    "update",
+    "remove",
+    "edit"
+  ],
+  "notes": "Requires a one-time web installer on first deploy (open the Staff URL). OPAC on UI_PORT, Staff on REST_PORT."
 }

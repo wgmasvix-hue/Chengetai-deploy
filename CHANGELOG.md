@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.0
+
+- New platform: **Koha** library management system. `chengetai deploy koha`
+  builds Koha from its official koha-common Debian package with MariaDB,
+  per-deployment generated passwords and ports (OPAC on UI_PORT, Staff on
+  REST_PORT), and the full lifecycle (start/stop/backup/restore/update/
+  remove). Koha's one-time web installer completes setup in the browser.
+
 ## 2.2.0
 
 - One-command installer (install-online.sh): curl | sudo bash installs
