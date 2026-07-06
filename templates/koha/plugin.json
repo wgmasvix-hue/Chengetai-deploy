@@ -1,8 +1,20 @@
 {
   "name": "koha",
   "displayName": "Koha",
-  "description": "Koha library management system",
-  "status": "coming-soon",
+  "description": "Koha integrated library system",
+  "status": "available",
   "category": "library",
-  "operations": []
+  "operations": [
+    "deploy",
+    "start",
+    "stop",
+    "restart",
+    "status",
+    "logs",
+    "backup",
+    "restore",
+    "update",
+    "edit",
+    "remove"
+  ]
 }

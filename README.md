@@ -88,7 +88,7 @@ new platforms can be added without touching the CLI itself.
 | Platform | Status |
 |---|---|
 | `dspace` | Available — DSpace 8 institutional repository |
-| `koha` | Coming soon |
+| `koha` | Available — Koha integrated library system |
 | `moodle` | Coming soon |
 | `ojs` | Coming soon |
 

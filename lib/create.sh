@@ -22,7 +22,12 @@ fi
 
 load_plugin "$PLATFORM"
 if [ "$PLUGIN_STATUS" != "available" ]; then
-    error "The '$PLATFORM' template is not available yet. Currently available: dspace"
+    available=$(for p in $(list_platforms); do
+        # shellcheck source=/dev/null
+        source "$TEMPLATES_DIR/$p/plugin.sh" 2>/dev/null || true
+        [ "${PLUGIN_STATUS:-}" = "available" ] && echo "$p"
+    done | tr '\n' ' ')
+    error "The '$PLATFORM' template is not available yet. Currently available: ${available:-dspace}"
 fi
 
 # Deployment name: second argument, DEPLOYMENT_NAME env var, or prompt.
