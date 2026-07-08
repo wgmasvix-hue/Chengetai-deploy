@@ -1,0 +1,11 @@
+# Binaries
+chengetai
+bin/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
