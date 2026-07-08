@@ -2,8 +2,13 @@ package dspace10
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
+	"github.com/chengetai-labs/chengetai-deploy/internal/config"
 	"github.com/chengetai-labs/chengetai-deploy/internal/docker"
+	"github.com/chengetai-labs/chengetai-deploy/internal/installer"
+	"github.com/chengetai-labs/chengetai-deploy/internal/runtime"
 )
 
 type Plugin struct{}
@@ -30,22 +35,67 @@ func (p *Plugin) CheckPrerequisites() error {
 }
 
 func (p *Plugin) Install() error {
-	fmt.Println("Installing DSpace 10...")
+
+	deployment := config.Deployment{
+		ID:               "demo",
+		Name:             "ChengetAI Demo",
+		Platform:         "dspace10",
+		Version:          "10.0",
+		Domain:           "repo.local",
+		Email:            "admin@repo.local",
+		AdminEmail:       "admin@repo.local",
+		DatabasePassword: "dspace",
+		InstallPath: filepath.Join(
+			os.Getenv("HOME"),
+			"chengetai",
+			"deployments",
+			"demo",
+		),
+	}
+
+	images, err := GetImages(deployment.Version)
+	if err != nil {
+		return err
+	}
+
+	deployment.BackendImage = images.Backend
+	deployment.SolrImage = images.Solr
+	deployment.AngularImage = images.Angular
+
+	fmt.Println("Preparing deployment...")
+
+	if err := runtime.Prepare(deployment); err != nil {
+		return err
+	}
+
+	if err := Generate(deployment); err != nil {
+		return err
+	}
+
+	if err := docker.ComposeUp(deployment.InstallPath); err != nil {
+		return err
+	}
+
+	if err := installer.InstallDSpace(deployment); err != nil {
+		return err
+	}
+
+	fmt.Println()
+	fmt.Println("Deployment generated successfully")
+	fmt.Println(deployment.InstallPath)
+
 	return nil
 }
 
 func (p *Plugin) Upgrade() error {
-	fmt.Println("Upgrading DSpace 10...")
 	return nil
 }
 
 func (p *Plugin) Backup() error {
-	fmt.Println("Backing up DSpace 10...")
 	return nil
 }
 
 func (p *Plugin) Restore() error {
-	fmt.Println("Restoring DSpace 10...")
 	return nil
 }
 

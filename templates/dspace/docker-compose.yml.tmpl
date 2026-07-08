@@ -1,0 +1,60 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: {{ .ID }}-postgres
+
+    environment:
+      POSTGRES_USER: dspace
+      POSTGRES_PASSWORD: {{ .DatabasePassword }}
+      POSTGRES_DB: dspace
+
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+    restart: unless-stopped
+
+  solr:
+    image: {{ .SolrImage }}
+    container_name: {{ .ID }}-solr
+
+    ports:
+      - "8983:8983"
+
+    volumes:
+      - ./solr:/var/solr
+
+    restart: unless-stopped
+
+  dspace:
+    image: {{ .BackendImage }}
+    container_name: {{ .ID }}-dspace
+
+    depends_on:
+      - postgres
+      - solr
+
+    environment:
+      DSPACE_DB_URL: jdbc:postgresql://postgres:5432/dspace
+      DSPACE_DB_USERNAME: dspace
+      DSPACE_DB_PASSWORD: {{ .DatabasePassword }}
+
+    ports:
+      - "8080:8080"
+
+    restart: unless-stopped
+
+  dspace-ui:
+    image: {{ .AngularImage }}
+    container_name: {{ .ID }}-ui
+
+    depends_on:
+      - dspace
+
+    ports:
+      - "4000:4000"
+
+    environment:
+      DSPACE_REST_URL: http://dspace:8080/server
+
+    restart: unless-stopped
