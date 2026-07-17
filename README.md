@@ -13,6 +13,10 @@ It ships three tiers — an Angular dashboard, a Node/Express REST API, and a
 Bash CLI + plugin engine. See `docs/ARCHITECTURE.md` for the full design,
 `docs/API.md` for the REST API, and `docs/PLUGIN-GUIDE.md` to add a platform.
 
+**Deploying DSpace?** Follow `docs/DEPLOY-DSPACE.md` — the exact,
+field-tested flow from a fresh server to a live site, including custom
+domain + HTTPS with nginx.
+
 ## Install (one command)
 
 On a fresh Ubuntu 22.04/24.04 server:
