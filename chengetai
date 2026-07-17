@@ -1,268 +1,67 @@
-#!/bin/bash
-# ChengetAi Universal Deployment System
-# Works with: DSpace, Koha, Moodle, OJS, FarmOS, etc.
+#!/usr/bin/env bash
 
 set -e
 
-COMMAND=${1:-help}
-PLATFORM=${2:-}
+SCRIPT_PATH="$(readlink -f "$0")"
+export CHENGETAI_HOME="${CHENGETAI_HOME:-$(cd "$(dirname "$SCRIPT_PATH")" && pwd)}"
 
-# Configuration
-DEPLOY_BASE="deployments"
-SCRIPTS_DIR="scripts"
+VERSION="$(cat "$CHENGETAI_HOME/VERSION" 2>/dev/null || echo unknown)"
 
 show_help() {
-    echo "🚀 ChengetAi Deployment System"
-    echo ""
-    echo "Usage: ./chengetai [command] [platform]"
-    echo ""
-    echo "Commands:"
-    echo "  deploy [platform]    Deploy a platform"
-    echo "  stop [platform]      Stop a platform"
-    echo "  restart [platform]   Restart a platform"
-    echo "  status [platform]    Show platform status"
-    echo "  logs [platform]      Show platform logs"
-    echo "  health [platform]    Run health checks"
-    echo "  info [platform]      Show platform info"
-    echo "  list                 List all platforms"
-    echo "  create [platform]    Create new deployment"
+
+cat <<HELP
+
+=========================================================
+        ChengetAi Deploy v${VERSION}
+=========================================================
+
+One Command. Complete Deployment.
+
+Usage:
+
+ chengetai install                    Install or update ChengetAi Deploy on this server
+ chengetai doctor                     Check the system and install missing dependencies
+ chengetai create [platform] [name]   Create a new deployment profile
+ chengetai deploy [platform|name]     Deploy a repository (creates a profile if needed)
+ chengetai start [name]               Start a deployment
+ chengetai stop [name]                Stop a deployment
+ chengetai restart [name]             Restart services
+ chengetai status [name]              Show service status
+ chengetai logs [name] [service...]   View logs
+ chengetai backup [name]              Create a backup
+ chengetai restore [name] [dir]       Restore a backup
+ chengetai edit <component> [name]    Edit logo, favicon, config or communities
+ chengetai update                     Update ChengetAi Deploy and its deployments
+ chengetai remove [name]              Remove a deployment
+ chengetai version                    Show version information
+ chengetai help                       Display all commands
+
+Platforms: dspace, koha (moodle, ojs, nextcloud, wordpress, roserag coming soon)
+
+HELP
+
 }
 
-# Find docker-compose file for a platform
-find_compose() {
-    local platform=$1
-    local dirs=(
-        "$DEPLOY_BASE/$platform/engine"
-        "$DEPLOY_BASE/$platform"
-    )
-    
-    for dir in "${dirs[@]}"; do
-        if [ -f "$dir/docker-compose.yml" ]; then
-            echo "$dir/docker-compose.yml"
-            return 0
-        fi
-        if [ -f "$dir/docker-compose-campus.yml" ]; then
-            echo "$dir/docker-compose-campus.yml"
-            return 0
-        fi
-    done
-    
-    return 1
-}
+CMD="${1:-}"
+[ $# -gt 0 ] && shift
 
-case "$COMMAND" in
-    deploy)
-        if [ -z "$PLATFORM" ]; then
-            echo "❌ Please specify a platform"
-            ./chengetai list
-            exit 1
-        fi
-        
-        COMPOSE_FILE=$(find_compose "$PLATFORM")
-        if [ $? -ne 0 ]; then
-            echo "❌ Platform '$PLATFORM' not found"
-            echo ""
-            ./chengetai list
-            exit 1
-        fi
-        
-        COMPOSE_DIR=$(dirname "$COMPOSE_FILE")
-        
-        echo "🚀 Deploying $PLATFORM..."
-        
-        # Load environment
-        if [ -f "$COMPOSE_DIR/.env" ]; then
-            export $(cat "$COMPOSE_DIR/.env" | grep -v '^#' | xargs)
-        fi
-        
-        # Run pre-deployment checks
-        if [ -x "$SCRIPTS_DIR/pre-deploy.sh" ]; then
-            bash "$SCRIPTS_DIR/pre-deploy.sh" "$PLATFORM"
-        fi
-        
-        # Deploy
-        cd "$COMPOSE_DIR"
-        docker compose -f "$(basename "$COMPOSE_FILE")" up -d
-        cd - > /dev/null
-        
-        echo "✅ Deployment started!"
-        echo ""
-        echo "📊 Check status: ./chengetai status $PLATFORM"
-        echo "📋 View logs:    ./chengetai logs $PLATFORM"
-        echo "🏥 Run health:   ./chengetai health $PLATFORM"
-        ;;
-    
-    stop)
-        if [ -z "$PLATFORM" ]; then
-            echo "❌ Please specify a platform"
-            exit 1
-        fi
-        
-        COMPOSE_FILE=$(find_compose "$PLATFORM")
-        if [ $? -ne 0 ]; then
-            echo "❌ Platform '$PLATFORM' not found"
-            exit 1
-        fi
-        
-        echo "🛑 Stopping $PLATFORM..."
-        cd "$(dirname "$COMPOSE_FILE")"
-        docker compose -f "$(basename "$COMPOSE_FILE")" down
-        cd - > /dev/null
-        echo "✅ $PLATFORM stopped"
-        ;;
-    
-    restart)
-        if [ -z "$PLATFORM" ]; then
-            echo "❌ Please specify a platform"
-            exit 1
-        fi
-        
-        COMPOSE_FILE=$(find_compose "$PLATFORM")
-        echo "🔄 Restarting $PLATFORM..."
-        cd "$(dirname "$COMPOSE_FILE")"
-        docker compose -f "$(basename "$COMPOSE_FILE")" restart
-        cd - > /dev/null
-        echo "✅ $PLATFORM restarted"
-        ;;
-    
-    status)
-        if [ -z "$PLATFORM" ]; then
-            # Show all platforms
-            echo "📊 All Deployments:"
-            echo "===================="
-            for dir in $DEPLOY_BASE/*/; do
-                p=$(basename "$dir")
-                COMPOSE_FILE=$(find_compose "$p" 2>/dev/null)
-                if [ -n "$COMPOSE_FILE" ]; then
-                    echo ""
-                    echo "Platform: $p"
-                    echo "File: $COMPOSE_FILE"
-                    cd "$(dirname "$COMPOSE_FILE")"
-                    docker compose -f "$(basename "$COMPOSE_FILE")" ps 2>/dev/null || echo "  Not running"
-                    cd - > /dev/null
-                fi
-            done
-        else
-            COMPOSE_FILE=$(find_compose "$PLATFORM")
-            echo "📊 $PLATFORM Status:"
-            echo "===================="
-            cd "$(dirname "$COMPOSE_FILE")"
-            docker compose -f "$(basename "$COMPOSE_FILE")" ps
-            cd - > /dev/null
-        fi
-        ;;
-    
-    logs)
-        if [ -z "$PLATFORM" ]; then
-            echo "❌ Please specify a platform"
-            exit 1
-        fi
-        
-        COMPOSE_FILE=$(find_compose "$PLATFORM")
-        echo "📋 $PLATFORM Logs (last 50 lines):"
-        echo "===================================="
-        cd "$(dirname "$COMPOSE_FILE")"
-        docker compose -f "$(basename "$COMPOSE_FILE")" logs --tail 50
-        cd - > /dev/null
-        ;;
-    
-    health)
-        if [ -z "$PLATFORM" ]; then
-            echo "❌ Please specify a platform"
-            exit 1
-        fi
-        
-        echo "🏥 Running health checks for $PLATFORM..."
-        if [ -x "$SCRIPTS_DIR/health-check.sh" ]; then
-            bash "$SCRIPTS_DIR/health-check.sh" "$PLATFORM"
-        else
-            echo "⚠️  No health check script found"
-            echo "Basic container status:"
-            ./chengetai status "$PLATFORM"
-        fi
-        ;;
-    
-    info)
-        if [ -z "$PLATFORM" ]; then
-            echo "❌ Please specify a platform"
-            exit 1
-        fi
-        
-        echo "📋 $PLATFORM Configuration:"
-        echo "============================"
-        
-        COMPOSE_FILE=$(find_compose "$PLATFORM")
-        if [ $? -ne 0 ]; then
-            echo "Platform not found"
-            exit 1
-        fi
-        
-        COMPOSE_DIR=$(dirname "$COMPOSE_FILE")
-        
-        # Show .env if exists
-        if [ -f "$COMPOSE_DIR/.env" ]; then
-            echo "Environment:"
-            cat "$COMPOSE_DIR/.env" | grep -v '^#' | grep -v '^$'
-            echo ""
-        fi
-        
-        # Show custom modules
-        if [ -d "$COMPOSE_DIR" ]; then
-            echo "Custom modules:"
-            find "$COMPOSE_DIR" -maxdepth 1 -name "dspace-*" -o -name "*.sh" | while read f; do
-                echo "  - $(basename "$f")"
-            done
-        fi
-        ;;
-    
-    list)
-        echo "📦 Available Platforms:"
-        echo "======================="
-        for dir in $DEPLOY_BASE/*/; do
-            if [ -d "$dir" ]; then
-                p=$(basename "$dir")
-                COMPOSE_FILE=$(find_compose "$p" 2>/dev/null)
-                if [ -n "$COMPOSE_FILE" ]; then
-                    echo "  ✅ $p - Ready to deploy"
-                else
-                    echo "  📁 $p - Configuration exists"
-                fi
-            fi
-        done
-        
-        if [ ! "$(ls -A $DEPLOY_BASE 2>/dev/null)" ]; then
-            echo "  No platforms found. Create one with:"
-            echo "  ./chengetai create [platform]"
-        fi
-        ;;
-    
-    create)
-        if [ -z "$PLATFORM" ]; then
-            echo "❌ Please specify a platform name"
-            echo "Usage: ./chengetai create [platform]"
-            exit 1
-        fi
-        
-        PLATFORM_DIR="$DEPLOY_BASE/$PLATFORM"
-        if [ -d "$PLATFORM_DIR" ]; then
-            echo "⚠️  Platform '$PLATFORM' already exists"
-            echo "Use './chengetai deploy $PLATFORM' to deploy it"
-            exit 1
-        fi
-        
-        echo "📁 Creating new deployment: $PLATFORM"
-        mkdir -p "$PLATFORM_DIR"
-        mkdir -p "$SCRIPTS_DIR"
-        
-        echo "✅ Created directory structure"
-        echo ""
-        echo "Next steps:"
-        echo "1. Add your docker-compose.yml to $PLATFORM_DIR/"
-        echo "2. Create $PLATFORM_DIR/.env for configuration"
-        echo "3. Run: ./chengetai deploy $PLATFORM"
-        ;;
-    
-    *)
-        show_help
-        ;;
+case "$CMD" in
+
+install|doctor|create|deploy|start|stop|restart|status|logs|backup|restore|edit|update|remove)
+    exec bash "$CHENGETAI_HOME/lib/$CMD.sh" "$@"
+    ;;
+
+version)
+    echo "ChengetAi Deploy Version $VERSION"
+    ;;
+
+help|"")
+    show_help
+    ;;
+
+*)
+    echo "Unknown command: $CMD"
+    show_help
+    exit 1
+    ;;
 esac

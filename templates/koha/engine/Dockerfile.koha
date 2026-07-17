@@ -1,0 +1,27 @@
+# Koha library management system — built from the official koha-common
+# Debian package (the canonical Koha install method), containerised.
+FROM debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Koha's official APT repository + dependencies.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      gnupg ca-certificates apt-transport-https wget curl \
+      mariadb-client procps \
+ && wget -qO- https://debian.koha-community.org/koha/gpg.asc \
+      | gpg --dearmor -o /usr/share/keyrings/koha.gpg \
+ && echo "deb [signed-by=/usr/share/keyrings/koha.gpg] https://debian.koha-community.org/koha stable main" \
+      > /etc/apt/sources.list.d/koha.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends koha-common \
+ && rm -rf /var/lib/apt/lists/*
+
+# Apache modules Koha needs.
+RUN a2enmod rewrite cgi headers proxy_http 2>/dev/null || true
+
+COPY koha-entrypoint.sh /usr/local/bin/koha-entrypoint.sh
+RUN chmod +x /usr/local/bin/koha-entrypoint.sh
+
+EXPOSE 8080 8081
+ENTRYPOINT ["/usr/local/bin/koha-entrypoint.sh"]

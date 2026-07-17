@@ -18,13 +18,13 @@ Bash CLI + plugin engine. See `docs/ARCHITECTURE.md` for the full design,
 On a fresh Ubuntu 22.04/24.04 server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/claude/dspace-deployment-review-98kzqb/install-online.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/main/install-online.sh | sudo bash
 ```
 
 Add a DSpace repository in the same run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/claude/dspace-deployment-review-98kzqb/install-online.sh | sudo bash -s -- --with-dspace
+curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/main/install-online.sh | sudo bash -s -- --with-dspace
 ```
 
 It installs the CLI, API and dashboard, wires nginx, and prints your
@@ -88,7 +88,7 @@ new platforms can be added without touching the CLI itself.
 | Platform | Status |
 |---|---|
 | `dspace` | Available — DSpace 8 institutional repository |
-| `koha` | Coming soon |
+| `koha` | Available — Koha library management system |
 | `moodle` | Coming soon |
 | `ojs` | Coming soon |
 

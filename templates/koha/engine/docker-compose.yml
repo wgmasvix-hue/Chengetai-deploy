@@ -1,0 +1,71 @@
+# ChengetAi Deploy — Koha stack template.
+# Instantiated per deployment: the plugin copies this into
+# deployments/<name>/engine/ and generates the .env beside it
+# (INSTANCE, OPAC_PORT, STAFF_PORT, DB_PASSWORD, DB_ROOT_PASSWORD,
+# KOHA_ADMIN_USER/PASS, LIBRARY_NAME). Compose project name is
+# chengetai-<deployment>, so deployments never collide.
+
+networks:
+  kohanet:
+
+services:
+  koha-db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
+      MARIADB_DATABASE: 'koha_${INSTANCE}'
+      MARIADB_USER: 'koha_${INSTANCE}'
+      MARIADB_PASSWORD: '${DB_PASSWORD}'
+    networks:
+      - kohanet
+    volumes:
+      - koha_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  koha:
+    build:
+      context: .
+      dockerfile: Dockerfile.koha
+    restart: unless-stopped
+    depends_on:
+      koha-db:
+        condition: service_healthy
+    environment:
+      KOHA_INSTANCE: '${INSTANCE}'
+      KOHA_ADMIN_USER: '${KOHA_ADMIN_USER}'
+      KOHA_ADMIN_PASS: '${KOHA_ADMIN_PASS}'
+      LIBRARY_NAME: '${LIBRARY_NAME}'
+      DB_HOST: koha-db
+      DB_PORT: '3306'
+      DB_NAME: 'koha_${INSTANCE}'
+      DB_USER: 'koha_${INSTANCE}'
+      DB_PASS: '${DB_PASSWORD}'
+      OPAC_PORT: '8080'
+      STAFF_PORT: '8081'
+    networks:
+      - kohanet
+    ports:
+      - "0.0.0.0:${OPAC_PORT}:8080"   # OPAC — public catalogue
+      - "0.0.0.0:${STAFF_PORT}:8081"  # Staff — librarian interface
+    volumes:
+      - koha_lib:/var/lib/koha
+      - koha_cfg:/etc/koha/sites
+    # First boot runs koha-create and Koha's DB setup, then Koha's
+    # web installer completes setup in the browser (see plugin notes).
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 180s
+
+volumes:
+  koha_db:
+  koha_lib:
+  koha_cfg:

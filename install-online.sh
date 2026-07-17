@@ -4,7 +4,7 @@
 #
 #  Install (or update) the whole platform on a fresh Ubuntu server:
 #
-#    curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/claude/dspace-deployment-review-98kzqb/install-online.sh | sudo bash
+#    curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/main/install-online.sh | sudo bash
 #
 #  Add DSpace in the same run:
 #    ... | sudo bash -s -- --with-dspace
@@ -16,7 +16,7 @@
 set -euo pipefail
 
 REPO_URL="https://github.com/wgmasvix-hue/Chengetai-deploy.git"
-BRANCH="${CHENGETAI_BRANCH:-claude/dspace-deployment-review-98kzqb}"
+BRANCH="${CHENGETAI_BRANCH:-main}"
 DEST="/opt/chengetai-deploy"
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'

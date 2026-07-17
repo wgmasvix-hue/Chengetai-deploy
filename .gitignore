@@ -1,27 +1,25 @@
 # Dependencies
 node_modules/
-.env
+**/node_modules/
+
+# Angular
+dashboard/dist/
+dashboard/.angular/
+
+# Logs
 *.log
+logs/
 
-# Docker volumes
-data/
-pgdata/
-solr_data/
-assetstore/
+# Environment
+.env
+.env.*
 
-# Archives
-*.tar.gz
-*.zip
-
-# IDE
-.vscode/
-.idea/
+# PM2
+.pm2/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Temporary
-tmp/
-temp/
-Chengetai-deploy/
+# API runtime data (JSON store, generated secrets)
+api/data/
