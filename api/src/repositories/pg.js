@@ -24,6 +24,14 @@ class PgCollection {
     return rows[0] ? rows[0].data : null;
   }
 
+  async filter(field, value) {
+    const { rows } = await pool.query(
+      `SELECT data FROM ${this.table} WHERE data->>$1 = $2 ORDER BY created_at`,
+      [field, String(value)]
+    );
+    return rows.map((r) => r.data);
+  }
+
   async insert(row) {
     await pool.query(`INSERT INTO ${this.table} (id, data) VALUES ($1, $2)`, [row.id, row]);
     return row;
@@ -47,5 +55,8 @@ module.exports = {
   users: new PgCollection('users'),
   servers: new PgCollection('servers'),
   auditLogs: new PgCollection('audit_logs'),
+  fleetAgents: new PgCollection('fleet_agents'),
+  enrollmentTokens: new PgCollection('enrollment_tokens'),
+  fleetCommands: new PgCollection('fleet_commands'),
   pool,
 };

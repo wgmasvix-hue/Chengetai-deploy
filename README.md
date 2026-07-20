@@ -13,6 +13,10 @@ It ships three tiers — an Angular dashboard, a Node/Express REST API, and a
 Bash CLI + plugin engine. See `docs/ARCHITECTURE.md` for the full design,
 `docs/API.md` for the REST API, and `docs/PLUGIN-GUIDE.md` to add a platform.
 
+**Managed deployments?** `docs/FLEET.md` describes the fleet control plane —
+enrol servers, drive them remotely, and disable any deployment centrally
+(services stop, data preserved). Standalone use is unaffected.
+
 ## Install (one command)
 
 On a fresh Ubuntu 22.04/24.04 server:
@@ -74,6 +78,8 @@ prints the frontend and backend URLs.
 | `chengetai edit <component> [name]` | Edit the logo, favicon, UI config or communities, then rebuild. |
 | `chengetai update` | Update ChengetAi Deploy and its deployments. |
 | `chengetai remove [name]` | Remove a deployment. |
+| `chengetai enroll <token>` | Enrol this server with the ChengetAi control plane (managed deployments). |
+| `chengetai agent <run\|once\|status>` | Fleet agent — heartbeat and remote commands. |
 | `chengetai version` | Show version information. |
 | `chengetai help` | Display all commands. |
 

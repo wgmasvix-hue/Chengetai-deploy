@@ -28,6 +28,8 @@ Usage:
  chengetai edit <component> [name]    Edit configuration
  chengetai update                     Update deployments
  chengetai remove [name]              Remove a deployment
+ chengetai enroll <token>             Enrol this server with the ChengetAi control plane
+ chengetai agent <run|once|status>    Fleet agent (heartbeat + remote commands)
  chengetai version                    Show version
  chengetai help                       This help
 
@@ -58,6 +60,11 @@ install|doctor|deploy|start|stop|restart|status|logs|backup|restore|edit|update|
     fi
     
     # Default to existing engine
+    exec bash "$CHENGETAI_HOME/lib/$CMD.sh" "$@"
+    ;;
+
+enroll|agent)
+    # Fleet control-plane commands (managed deployments).
     exec bash "$CHENGETAI_HOME/lib/$CMD.sh" "$@"
     ;;
 
