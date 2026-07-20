@@ -35,7 +35,8 @@ export class ApiService {
     return this.http.get<{ deployment: string; output: string }>(`${this.apiUrl}/deployments/${name}/status`);
   }
   startManager(name: string) {
-    return this.http.post<{ url: string; port: number; running: boolean }>(
+    // url points at the API's reverse proxy to the (localhost-bound) manager.
+    return this.http.post<{ url: string; running: boolean }>(
       `${this.apiUrl}/deployments/${name}/manager`, {});
   }
   deleteDeployment(name: string, purge = false) {

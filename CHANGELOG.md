@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.14.0
+
+- **Hardened the manager UI.** It now binds to **127.0.0.1** by default
+  instead of `0.0.0.0`, so it is never on an open port. The dashboard reaches
+  it through a new **API reverse proxy**
+  (`/api/deployments/:name/manager/proxy`) that forwards to the
+  localhost-bound manager and is gated by the manager token — so manager
+  traffic rides the dashboard's channel (HTTPS when fronted by nginx/Caddy)
+  rather than a separate plaintext port. `--bind` can still widen it for
+  advanced use, but it's discouraged.
+
 ## 2.13.1
 
 - **Robust `chengetai update`.** The CLI update now FORCE-ALIGNS to the
