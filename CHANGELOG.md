@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.11.0
+
+- **New platform: OJS (Open Journal Systems).** `chengetai deploy ojs`
+  stands up OJS from PKP's official `pkpofficial/ojs` image with MariaDB,
+  with per-deployment generated passwords and port, and the full lifecycle
+  (start/stop/status/logs/backup/restore/update/edit/remove). Setup finishes
+  in OJS's one-time web installer (the deploy prints the database details).
+  Config, uploads and public files are persisted on the host so they survive
+  container recreation.
+
 ## 2.10.0
 
 - **New platform: Moodle.** `chengetai deploy moodle` stands up Moodle from

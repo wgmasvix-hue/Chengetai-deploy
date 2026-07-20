@@ -131,7 +131,7 @@ new platforms can be added without touching the CLI itself.
 | `dspace` | Available — DSpace 8 institutional repository |
 | `koha` | Available — Koha library management system |
 | `moodle` | Available — Moodle learning management system |
-| `ojs` | Coming soon |
+| `ojs` | Available — Open Journal Systems (scholarly publishing) |
 
 ```bash
 chengetai deploy dspace

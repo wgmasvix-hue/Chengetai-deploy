@@ -2,7 +2,20 @@
   "name": "ojs",
   "displayName": "Open Journal Systems",
   "description": "OJS scholarly journal publishing",
-  "status": "coming-soon",
+  "status": "available",
   "category": "publishing",
-  "operations": []
+  "operations": [
+    "deploy",
+    "start",
+    "stop",
+    "restart",
+    "status",
+    "logs",
+    "backup",
+    "restore",
+    "update",
+    "remove",
+    "edit"
+  ],
+  "notes": "Built from PKP's official pkpofficial/ojs image with MariaDB. Setup is finished in OJS's one-time web installer (the deploy prints the database details). Single web port on UI_PORT; the DB password is stored in the engine .env."
 }
