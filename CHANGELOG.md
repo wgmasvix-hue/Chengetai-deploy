@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.9.0
+
+- **`chengetai status` overview.** With no name and several deployments it
+  now prints an at-a-glance table — name, platform, whether it's deployed,
+  whether it's running, the URL, and (if installed) the manager service
+  state — instead of erroring "specify one". A single deployment still shows
+  the detailed view, and `chengetai status <name>` is the detailed view for
+  a named one.
+
 ## 2.8.1
 
 - **`doctor` checks manager services.** The readiness report now lists each
