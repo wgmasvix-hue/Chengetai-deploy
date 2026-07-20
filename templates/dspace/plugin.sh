@@ -156,6 +156,65 @@ plugin_deploy() {
         bash "$engine/install.sh"
 }
 
+# Point the deployment's public URL at an HTTPS domain — used by
+# `chengetai domain`, which puts Caddy in front. Rewrites the frontend
+# config.yml (ui + rest blocks) and the backend compose env, then rebuilds
+# the frontend image and recreates the stack. Backups (.bak) are kept so the
+# change is easy to roll back.
+plugin_domain() {
+    require_engine
+    local domain="${1:-}"
+    [ -n "$domain" ] || error "plugin_domain: a domain is required"
+
+    local engine cfg compose
+    engine="$(engine_dir)"
+    cfg="$engine/config.yml"
+    compose="$engine/docker-compose-campus.yml"
+
+    # 1. Frontend: rewrite the ui: and rest: blocks to https://<domain>.
+    if [ -f "$cfg" ]; then
+        cp -f "$cfg" "$cfg.bak"
+        awk -v d="$domain" '
+            /^ui:/   { blk="ui";   print; next }
+            /^rest:/ { blk="rest"; print; next }
+            /^[^[:space:]]/ { blk="" }
+            {
+                if (blk=="ui" || blk=="rest") {
+                    if ($1=="ssl:")  { print "  ssl: true"; next }
+                    if ($1=="host:") { print "  host: " d;  next }
+                    if ($1=="port:") { print "  port: 443"; next }
+                }
+                print
+            }
+        ' "$cfg.bak" > "$cfg"
+        info "Frontend pointed at https://$domain (backup: config.yml.bak)"
+    else
+        warn "config.yml not found — skipping the frontend repoint."
+    fi
+
+    # 2. Backend: set the public server/ui URLs in the compose env.
+    if [ -f "$compose" ]; then
+        cp -f "$compose" "$compose.bak"
+        sed -i -E "s#(dspace__P__server__P__url:).*#\1 https://$domain/server#" "$compose"
+        sed -i -E "s#(dspace__P__ui__P__url:).*#\1 https://$domain#"          "$compose"
+        if ! grep -q 'dspace__P__server__P__url' "$compose"; then
+            warn "Backend server-URL env not found in compose — set dspace.server.url to https://$domain/server manually."
+        else
+            info "Backend public URL set to https://$domain/server (backup: docker-compose-campus.yml.bak)"
+        fi
+    else
+        warn "docker-compose-campus.yml not found — skipping the backend repoint."
+    fi
+
+    # 3. Rebuild the frontend image (config.yml is baked in) and recreate.
+    require_docker
+    info "Rebuilding the frontend and recreating services (can take a few minutes)..."
+    docker build -f "$engine/Dockerfile.angular" -t bpoly-dspace-angular:latest "$engine" >/dev/null
+    pcompose up -d
+    echo ""
+    info "DSpace is now served at https://$domain"
+}
+
 plugin_start() {
     require_engine
     pcompose up -d

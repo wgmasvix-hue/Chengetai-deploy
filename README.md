@@ -81,6 +81,7 @@ prints the frontend and backend URLs.
 | `chengetai restore [name] [dir]` | Restore a backup (most recent by default). |
 | `chengetai edit <component> [name]` | Edit the logo, favicon, UI config or communities, then rebuild. |
 | `chengetai admin [name]` | Create or reset the administrator account against the running backend (no redeploy). |
+| `chengetai domain [name] <domain>` | Put the deployment behind a domain with automatic HTTPS via Caddy. |
 | `chengetai update` | Update ChengetAi Deploy and its deployments. |
 | `chengetai remove [name]` | Remove a deployment. |
 | `chengetai enroll <token>` | Enrol this server with the ChengetAi control plane (managed deployments). |

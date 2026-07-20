@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.5.0
+
+- **`chengetai domain [name] <domain>`** — one command puts a deployment
+  behind a real domain with **automatic HTTPS via Caddy** (Let's Encrypt,
+  self-renewing). It installs Caddy, writes a per-deployment site that
+  reverse-proxies the UI and REST under one origin, reloads Caddy, and
+  repoints DSpace at the HTTPS URL (frontend `config.yml` + backend public
+  URL, with `.bak` backups), then rebuilds/restarts. Replaces the manual
+  nginx + certbot setup. `--caddy-only` sets up just the proxy;
+  `--email` sets the ACME contact.
+
 ## 2.4.0
 
 - **Managed deployments (fleet control plane).** Servers enrol with a

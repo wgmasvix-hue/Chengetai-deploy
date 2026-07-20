@@ -110,12 +110,26 @@ The deployment name can be omitted whenever only one deployment exists.
 ## Part 2 — Custom domain + HTTPS
 
 Serve DSpace on a real domain with TLS — e.g.
-`https://unifiedrepo.chengerailabs.co.zw` — instead of `:4000`. nginx
-terminates HTTPS and proxies the UI and REST **under one domain**, so they're
-same-origin (no CORS configuration needed).
+`https://unifiedrepo.chengerailabs.co.zw` — instead of `:4000`.
 
-Replace `unifiedrepo.chengerailabs.co.zw` with your domain throughout, and
-`<name>` with your deployment name (`chengetai status` lists it).
+### Automated (recommended) — `chengetai domain`
+
+One command sets up **Caddy** (automatic Let's Encrypt HTTPS), reverse-proxies
+the UI and REST under one domain, and repoints DSpace at the HTTPS URL:
+
+```bash
+# DNS first: an A record for your domain → the server's public IP.
+sudo chengetai domain <name> your-domain.example --email you@example
+```
+
+It installs Caddy if needed, writes the site to `/etc/caddy/conf.d/<name>.caddy`,
+reloads Caddy, rewrites the frontend `config.yml` and the backend public URL
+(backups kept as `.bak`), and rebuilds/restarts the stack. Watch certificate
+issuance with `journalctl -u caddy -f`. That's it — skip the manual steps below.
+
+The rest of this section documents the equivalent **manual nginx + certbot**
+setup if you prefer to run it by hand. Replace `unifiedrepo.chengerailabs.co.zw`
+with your domain throughout, and `<name>` with your deployment name.
 
 ### 1. Point DNS at the server
 
