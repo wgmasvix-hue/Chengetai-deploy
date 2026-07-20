@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.17.0
+
+- **v3 upgrade engine with automatic rollback: `chengetai upgrade`.** Upgrades a
+  v3-generated DSpace deployment in place, safely. It **snapshots** the whole
+  deployment first — `docker-compose.yml`, `Caddyfile`, `.env`, `local.cfg`,
+  `config.yml`, `healthcheck.sh` and a `pg_dump` of the database — into
+  `<dir>/upgrades/<timestamp>/`, then rewrites the `dspace/dspace` and
+  `dspace/dspace-angular` image tags (`--to TAG`), pulls, recreates the stack,
+  and health-checks with retries. On **any** failure it automatically rolls
+  back: restoring the snapshot files **and the database**, bringing the previous
+  version back up, and re-verifying — so a bad upgrade never leaves the
+  repository down or loses data (database, assetstore, Caddyfile/SSL, branding
+  and `.env` are all preserved). `--rollback <snapshot>` restores an earlier
+  snapshot directly for disaster recovery. Same structured
+  `[INFO]/[SUCCESS]/[WARNING]/[ERROR]` logging as `generate`. Docs in
+  `docs/V3-ENGINE.md`.
+
 ## 2.16.0
 
 - **v3 DSpace engine (prototype): `chengetai generate`.** A template-driven

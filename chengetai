@@ -24,6 +24,7 @@ Usage:
  chengetai create [platform] [name]   Create a new deployment profile
  chengetai deploy [platform|name]     Deploy a repository (creates a profile if needed)
  chengetai generate <deployment.yml>  Generate a v3 deployment from a master config (prototype)
+ chengetai upgrade <dir> [--to TAG]   Upgrade a v3 deployment with automatic rollback on failure
  chengetai start [name]               Start a deployment
  chengetai stop [name]                Stop a deployment
  chengetai restart [name]             Restart services
@@ -54,7 +55,7 @@ CMD="${1:-}"
 
 case "$CMD" in
 
-install|doctor|create|deploy|generate|start|stop|restart|status|verify|logs|backup|restore|edit|admin|domain|manager|update|remove|enroll|agent)
+install|doctor|create|deploy|generate|upgrade|start|stop|restart|status|verify|logs|backup|restore|edit|admin|domain|manager|update|remove|enroll|agent)
     exec bash "$CHENGETAI_HOME/lib/$CMD.sh" "$@"
     ;;
 
