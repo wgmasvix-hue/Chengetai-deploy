@@ -29,7 +29,7 @@ Usage:
  chengetai status [name]              Show service status
  chengetai verify [name]              Smoke-test a deployment (engine, containers, web health)
  chengetai logs [name] [service...]   View logs
- chengetai backup [name]              Create a backup
+ chengetai backup [name]              Create a backup (--schedule daily|weekly|monthly, --keep N, --offsite CMD)
  chengetai restore [name] [dir]       Restore a backup
  chengetai edit <component> [name]    Edit logo, favicon, config or communities
  chengetai admin [name]               Create or reset the administrator account

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.15.0
+
+- **Scheduled backups, retention, and off-site.** `chengetai backup <name>`
+  gains `--schedule daily|weekly|monthly` (installs a per-deployment systemd
+  timer), `--keep N` (prune to the N most recent backups — defaults to 7 for
+  scheduled ones), and `--offsite 'CMD'` (run a command such as an `rsync` or
+  `aws s3 sync` after each backup, with `$BACKUP_DIR` set, to push the backup
+  off the server). Settings are remembered in the deployment's `backup.env`;
+  `--unschedule` removes the timer. A plain `chengetai backup` is still a
+  one-off, now applying retention/off-site if configured.
+
 ## 2.14.0
 
 - **Hardened the manager UI.** It now binds to **127.0.0.1** by default
