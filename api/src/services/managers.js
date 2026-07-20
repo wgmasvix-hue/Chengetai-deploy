@@ -4,6 +4,9 @@
 // registry, and hand the dashboard a link. Idempotent: a deployment whose
 // manager is already alive is reused, not respawned.
 const { spawn } = require('child_process');
+const net = require('net');
+const fs = require('fs');
+const path = require('path');
 const cli = require('./cli');
 const config = require('../config');
 
@@ -19,6 +22,43 @@ function alive(pid) {
   }
 }
 
+// Persisted per-deployment manager settings (written by lib/manager.sh),
+// present when a manager has been run or installed as a service.
+function readPersisted(name) {
+  try {
+    const txt = fs.readFileSync(path.join(config.deploymentsDir, name, 'manager.env'), 'utf8');
+    const get = (k) => {
+      const m = txt.match(new RegExp(`^${k}=(.*)$`, 'm'));
+      return m ? m[1].trim() : '';
+    };
+    const port = Number(get('MANAGER_PORT'));
+    const token = get('MANAGER_TOKEN');
+    if (port && token) return { port, token };
+  } catch {
+    /* no persisted manager */
+  }
+  return null;
+}
+
+// Is something actually listening on the manager port? (An always-on service
+// keeps it up; a stale manager.env from a past foreground run does not.)
+function portAlive(port, host = '127.0.0.1', timeout = 800) {
+  return new Promise((resolve) => {
+    const sock = net.connect({ port, host });
+    let done = false;
+    const finish = (v) => {
+      if (done) return;
+      done = true;
+      sock.destroy();
+      resolve(v);
+    };
+    sock.setTimeout(timeout);
+    sock.once('connect', () => finish(true));
+    sock.once('timeout', () => finish(false));
+    sock.once('error', () => finish(false));
+  });
+}
+
 function publicInfo(rec, hostname) {
   return {
     url: `http://${hostname}:${rec.port}/?t=${rec.token}`,
@@ -31,12 +71,21 @@ function publicInfo(rec, hostname) {
 // Start (or reuse) the manager for `name`. `hostname` is the host the
 // dashboard was reached on, so the returned URL points at the same host as
 // the manager's own port.
-function start(name, hostname) {
-  const existing = managers.get(name);
-  if (existing && alive(existing.pid)) {
-    return Promise.resolve(publicInfo(existing, hostname));
+async function start(name, hostname) {
+  // 1. An always-on service (or any manager already listening on the
+  //    persisted port) — just hand back its stable URL.
+  const persisted = readPersisted(name);
+  if (persisted && (await portAlive(persisted.port))) {
+    return publicInfo({ ...persisted, startedAt: null }, hostname);
   }
 
+  // 2. A manager this process spawned earlier and is still alive.
+  const existing = managers.get(name);
+  if (existing && alive(existing.pid)) {
+    return publicInfo(existing, hostname);
+  }
+
+  // 3. Cold-start one on demand.
   return new Promise((resolve, reject) => {
     // Bind 0.0.0.0 so the dashboard user's browser can reach it; the manager
     // is gated by the per-session token it prints.

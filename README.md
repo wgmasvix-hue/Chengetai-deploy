@@ -100,12 +100,25 @@ Each deployment can have its own lightweight web console:
 chengetai manager <name>     # prints a local URL with an access token
 ```
 
-It serves a small page (bound to `127.0.0.1` by default) to check status,
-start/stop/restart, back up, view recent logs, and create/reset the
-administrator — every button shells out to the same `chengetai` CLI. The
-default port is derived from the deployment's UI port, so several
-deployments' managers never collide. Reach it from your laptop with an SSH
-tunnel: `ssh -L <port>:127.0.0.1:<port> <user>@<server>`.
+It serves a small page to check status, start/stop/restart, back up, view
+recent logs, and create/reset the administrator — every button shells out to
+the same `chengetai` CLI. The access token and port are persisted per
+deployment (so the URL is stable), and the default port derives from the
+deployment's UI port, so several deployments' managers never collide.
+
+Run it always-on as a systemd service (one per deployment):
+
+```bash
+sudo chengetai manager <name> --install     # enable + start the service
+sudo chengetai manager <name> --uninstall   # remove it
+chengetai manager <name> --status           # service state + URL
+```
+
+The central dashboard's **Manager** button opens the running service
+directly (and cold-starts one on demand if none is installed). Reach a
+`127.0.0.1` bind from your laptop with an SSH tunnel
+(`ssh -L <port>:127.0.0.1:<port> <user>@<server>`); for a non-local bind,
+restrict the port to your VPN/campus subnet.
 
 ## Platforms
 
