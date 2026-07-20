@@ -105,6 +105,14 @@ jobs:
             fi
           done
           exit $fail
+      - name: v3 engine — render + no-hardcoded-IP guard
+        run: |
+          # The generator renders the example deployment, validates the
+          # compose, and fails if any hardcoded IP leaks into the output.
+          CHENGETAI_HOME="$PWD" bash chengetai generate \
+            platforms/dspace/deployment.example.yml --out /tmp/v3out
+          test -f /tmp/v3out/docker-compose.yml
+          test -f /tmp/v3out/Caddyfile
 
   security:
     name: Security scan
