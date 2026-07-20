@@ -1,8 +1,21 @@
 {
   "name": "nextcloud",
   "displayName": "Nextcloud",
-  "description": "Nextcloud file sync and collaboration",
-  "status": "coming-soon",
+  "description": "Nextcloud file sync & collaboration",
+  "status": "available",
   "category": "collaboration",
-  "operations": []
+  "operations": [
+    "deploy",
+    "start",
+    "stop",
+    "restart",
+    "status",
+    "logs",
+    "backup",
+    "restore",
+    "update",
+    "remove",
+    "edit"
+  ],
+  "notes": "Built from the official Nextcloud + MariaDB images. Auto-installs on first boot from the profile (no web installer). Single web port on UI_PORT; the admin password is stored in the engine .env. Add a domain to NC_TRUSTED_DOMAINS when serving over one."
 }

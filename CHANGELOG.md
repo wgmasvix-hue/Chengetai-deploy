@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.12.0
+
+- **New platforms: Nextcloud and WordPress.** `chengetai deploy nextcloud`
+  (official Nextcloud + MariaDB, auto-installs from the profile) and
+  `chengetai deploy wordpress` (official Bitnami WordPress + MariaDB, admin
+  created on first boot). Both ship the full lifecycle, per-deployment
+  generated passwords (`.env`, mode 600) and a single web port, and appear
+  automatically in the dashboard's New Deployment picker (it lists every
+  available plugin). Six platforms are now available: DSpace, Koha, Moodle,
+  OJS, Nextcloud, WordPress.
+
 ## 2.11.0
 
 - **New platform: OJS (Open Journal Systems).** `chengetai deploy ojs`
