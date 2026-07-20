@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.13.1
+
+- **Robust `chengetai update`.** The CLI update now FORCE-ALIGNS to the
+  remote (`fetch` + `checkout -f`) instead of a fast-forward pull, so it
+  works even after the branch history was rewritten (a plain pull would fail
+  with "Not possible to fast-forward"). Untracked runtime state
+  (deployments/, api/.env, api/data) is preserved. Update also re-points the
+  `/usr/local/bin/chengetai` launcher at this install and warns if a
+  different, stale `chengetai` is shadowing it on your PATH; `install-cli.sh`
+  gained the same shadow check.
+
 ## 2.13.0
 
 - **`chengetai verify [name]` — per-platform smoke test.** Checks the engine
