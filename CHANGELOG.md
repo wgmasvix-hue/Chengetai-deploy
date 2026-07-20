@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.16.0
+
+- **v3 DSpace engine (prototype): `chengetai generate`.** A template-driven
+  engine that renders every config file from a single `deployment.yml` — no
+  hardcoded IPs, no duplicated values, no manual editing. `platforms/dspace/`
+  ships `.tpl` templates (docker-compose, Caddyfile, local.cfg, config.yml,
+  .env, healthcheck) with `{{PLACEHOLDER}}`s; a stdlib Python renderer fills
+  them from the master config and fails on any unfilled placeholder. The
+  pipeline validates (config, ports, Docker), renders, **guards against
+  hardcoded IPs**, validates the compose, and — with `--up` — launches the
+  stack behind Caddy (automatic Let's Encrypt HTTPS) with health checks and
+  teardown-on-failure. DNS is provider-agnostic (manual by default). Docs in
+  `docs/V3-ENGINE.md`; CI now renders the example and enforces the no-IP
+  guard. This is the reference architecture for future platforms.
+
 ## 2.15.0
 
 - **Scheduled backups, retention, and off-site.** `chengetai backup <name>`
