@@ -75,6 +75,39 @@ plugin_urls() {
     echo "  REST API:      http://${ip}:$(rest_port)/server"
 }
 
+# Create or reset the DSpace administrator against the already-running
+# backend — no redeploy needed. Non-interactive when ADMIN_EMAIL and
+# ADMIN_PASS are set, otherwise runs DSpace's own interactive prompt. This
+# is what recovers from the "passwords do not match" case cleanly.
+plugin_admin() {
+    require_engine
+    if ! container_running dspace; then
+        error "The backend container (dspace) is not running. Start it first: chengetai start $DEPLOY_NAME"
+    fi
+    local lang="${ADMIN_LANG:-en}"
+    if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_PASS:-}" ]; then
+        info "Creating/updating administrator $ADMIN_EMAIL (non-interactive)..."
+        if docker exec dspace /dspace/bin/dspace create-administrator \
+                -e "$ADMIN_EMAIL" \
+                -f "${ADMIN_FIRST_NAME:-Repository}" \
+                -l "${ADMIN_LAST_NAME:-Admin}" \
+                -c "$lang" \
+                -p "$ADMIN_PASS"; then
+            echo ""
+            info "Administrator ready: $ADMIN_EMAIL"
+            echo "  Sign in at: http://$(plugin_server_ip):$(ui_port)"
+        else
+            error "create-administrator failed (see the output above)."
+        fi
+    else
+        info "Launching DSpace's interactive administrator setup..."
+        echo "  Tip: set ADMIN_EMAIL and ADMIN_PASS (or pass --email/--password)"
+        echo "       to run this without any prompts."
+        echo ""
+        docker exec -it dspace /dspace/bin/dspace create-administrator
+    fi
+}
+
 # Copy this deployment's branding over the engine's assets. The engine's
 # own copies are reset from git first so upstream updates never conflict
 # with local branding.

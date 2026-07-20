@@ -26,6 +26,7 @@ Usage:
  chengetai backup [name]              Create a backup
  chengetai restore [name] [dir]       Restore a backup
  chengetai edit <component> [name]    Edit configuration
+ chengetai admin [name]               Create or reset the administrator account
  chengetai update                     Update deployments
  chengetai remove [name]              Remove a deployment
  chengetai version                    Show version
@@ -40,7 +41,7 @@ CMD="${1:-}"
 [ $# -gt 0 ] && shift
 
 case "$CMD" in
-install|doctor|deploy|start|stop|restart|status|logs|backup|restore|edit|update|remove)
+install|doctor|deploy|start|stop|restart|status|logs|backup|restore|edit|update|remove|admin)
     # Route to platform-specific scripts
     PLATFORM="${1:-}"
     

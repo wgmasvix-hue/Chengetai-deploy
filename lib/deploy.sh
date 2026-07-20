@@ -37,3 +37,19 @@ bash "$CHENGETAI_HOME/lib/doctor.sh" \
 banner "Deploying '$DEPLOY_NAME' ($PLATFORM)"
 
 plugin_deploy
+
+# Post-deploy summary. plugin_urls is defined by every platform plugin;
+# guard in case a plugin omits it.
+echo ""
+banner "Deployment '$DEPLOY_NAME' is up"
+if declare -F plugin_urls >/dev/null; then
+    plugin_urls
+    echo ""
+fi
+if declare -F plugin_admin >/dev/null; then
+    echo "  Manage the administrator account any time (no redeploy):"
+    echo "    chengetai admin $DEPLOY_NAME              # interactive"
+    echo "    chengetai admin $DEPLOY_NAME --generate   # reset with a new random password"
+    echo ""
+fi
+info "Check service + URL health with: chengetai status $DEPLOY_NAME"

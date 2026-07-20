@@ -72,6 +72,7 @@ prints the frontend and backend URLs.
 | `chengetai backup [name]` | Back up the database and uploaded files. |
 | `chengetai restore [name] [dir]` | Restore a backup (most recent by default). |
 | `chengetai edit <component> [name]` | Edit the logo, favicon, UI config or communities, then rebuild. |
+| `chengetai admin [name]` | Create or reset the administrator account against the running backend (no redeploy). |
 | `chengetai update` | Update ChengetAi Deploy and its deployments. |
 | `chengetai remove [name]` | Remove a deployment. |
 | `chengetai version` | Show version information. |
