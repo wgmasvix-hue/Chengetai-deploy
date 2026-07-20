@@ -78,7 +78,7 @@ prints the frontend and backend URLs.
 | `chengetai status [name]` | Show service status and URL health. |
 | `chengetai verify [name]` | Smoke-test a deployment (engine, containers, web health). |
 | `chengetai logs [name] [service...]` | Follow logs. |
-| `chengetai backup [name]` | Back up the database and uploaded files. |
+| `chengetai backup [name]` | Back up the database and uploaded files (`--schedule`, `--keep N`, `--offsite CMD`). |
 | `chengetai restore [name] [dir]` | Restore a backup (most recent by default). |
 | `chengetai edit <component> [name]` | Edit the logo, favicon, UI config or communities, then rebuild. |
 | `chengetai admin [name]` | Create or reset the administrator account against the running backend (no redeploy). |
