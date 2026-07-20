@@ -148,6 +148,23 @@ else
     MISSING=$((MISSING + 1))
 fi
 
+# ── Manager services (per-deployment always-on UI) ──────────────────────────
+# Flags managers that were installed as a service but aren't running. This is
+# a warning only — it never counts as a missing dependency, so it can't block
+# a deploy.
+if command -v systemctl >/dev/null 2>&1; then
+    for _name in $(list_deployments); do
+        _svc="chengetai-manager@$_name"
+        _active="$(systemctl is-active "$_svc" 2>/dev/null || true)"
+        _enabled="$(systemctl is-enabled "$_svc" 2>/dev/null || true)"
+        if [ "$_active" = "active" ]; then
+            pass "Manager service ($_name) running"
+        elif [ "$_enabled" = "enabled" ]; then
+            note "Manager service ($_name) installed but not running — sudo systemctl restart $_svc"
+        fi
+    done
+fi
+
 echo ""
 echo "========================================="
 echo " Ready for Deployment Check Complete"

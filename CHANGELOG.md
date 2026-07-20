@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.8.1
+
+- **`doctor` checks manager services.** The readiness report now lists each
+  deployment's manager service: a running one passes, and one that was
+  installed but isn't running is flagged (with the `systemctl restart`
+  command to fix it). It's a warning only — never a missing dependency, so
+  it can't block a deploy.
+
 ## 2.8.0
 
 - **Always-on manager service.** `chengetai manager <name> --install`
