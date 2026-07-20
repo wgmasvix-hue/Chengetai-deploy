@@ -17,6 +17,10 @@ Bash CLI + plugin engine. See `docs/ARCHITECTURE.md` for the full design,
 field-tested flow from a fresh server to a live site, including custom
 domain + HTTPS with nginx.
 
+**Managed deployments?** `docs/FLEET.md` describes the fleet control plane —
+enrol servers, drive them remotely, and disable any deployment centrally
+(services stop, data preserved). Standalone use is unaffected.
+
 ## Install (one command)
 
 On a fresh Ubuntu 22.04/24.04 server:
@@ -76,8 +80,11 @@ prints the frontend and backend URLs.
 | `chengetai backup [name]` | Back up the database and uploaded files. |
 | `chengetai restore [name] [dir]` | Restore a backup (most recent by default). |
 | `chengetai edit <component> [name]` | Edit the logo, favicon, UI config or communities, then rebuild. |
+| `chengetai admin [name]` | Create or reset the administrator account against the running backend (no redeploy). |
 | `chengetai update` | Update ChengetAi Deploy and its deployments. |
 | `chengetai remove [name]` | Remove a deployment. |
+| `chengetai enroll <token>` | Enrol this server with the ChengetAi control plane (managed deployments). |
+| `chengetai agent <run\|once\|status>` | Fleet agent — heartbeat and remote commands. |
 | `chengetai version` | Show version information. |
 | `chengetai help` | Display all commands. |
 

@@ -32,4 +32,17 @@ module.exports = {
     path.join(__dirname, '..', '..', 'templates'),
   adminEmail: process.env.ADMIN_EMAIL || 'admin@chengetai.local',
   adminPassword: process.env.ADMIN_PASSWORD || '',
+
+  // Fleet control plane (managed deployments). How often agents should
+  // check in, and how long an agent may keep serving after losing contact
+  // before it treats itself as unmanaged. Model A: a running site keeps
+  // serving through short control-plane outages; only an explicit revoke
+  // stops it.
+  fleet: {
+    heartbeatSeconds: Number(process.env.FLEET_HEARTBEAT_SECONDS || 60),
+    // Agents that miss heartbeats for longer than this are shown "offline".
+    offlineAfterSeconds: Number(process.env.FLEET_OFFLINE_AFTER_SECONDS || 180),
+    // Default lifetime of an enrollment token (minutes) before it expires.
+    enrollmentTokenTtlMinutes: Number(process.env.FLEET_ENROLL_TTL_MINUTES || 1440),
+  },
 };
