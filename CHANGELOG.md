@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.10.0
+
+- **New platform: Moodle.** `chengetai deploy moodle` stands up Moodle from
+  the official Bitnami images (Moodle + MariaDB), with per-deployment
+  generated passwords and port, and the full lifecycle
+  (start/stop/status/logs/backup/restore/update/edit/remove). The
+  administrator is created on first boot from the profile — no web
+  installer — and the admin password is stored in the engine `.env`
+  (mode 600). A single web port (UI_PORT).
+
 ## 2.9.0
 
 - **`chengetai status` overview.** With no name and several deployments it
