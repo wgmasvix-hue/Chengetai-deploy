@@ -24,3 +24,7 @@ Thumbs.db
 # API runtime data (JSON store, generated secrets)
 api/data/
 deployments-v3/
+
+# Python bytecode
+__pycache__/
+*.pyc
