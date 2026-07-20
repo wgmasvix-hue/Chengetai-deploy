@@ -101,6 +101,7 @@ router.post(
 );
 router.get('/deployments/:name/status', deployments.status);
 router.post('/deployments/:name/actions/:action', requireRole('engineer'), deployments.action);
+router.post('/deployments/:name/manager', requireRole('engineer'), deployments.manager);
 router.delete('/deployments/:name', requireRole('admin'), deployments.remove);
 
 // ── Jobs (progress of long-running CLI operations) ─────────────────────────

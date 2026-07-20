@@ -28,6 +28,22 @@ export class Deployments implements OnInit {
     });
   }
 
+  openManager(d: Deployment) {
+    this.notice.set('');
+    this.busy.set(`${d.name}:manager`);
+    this.api.startManager(d.name).subscribe({
+      next: (res) => {
+        this.busy.set('');
+        window.open(res.url, '_blank');
+        this.notice.set(`Manager opened for ${d.name}.`);
+      },
+      error: (err) => {
+        this.busy.set('');
+        this.notice.set(err?.error?.error || `Failed to open manager for ${d.name}`);
+      },
+    });
+  }
+
   remove(d: Deployment) {
     if (!confirm(`Remove deployment "${d.name}"? (data volumes are kept)`)) return;
     this.busy.set(`${d.name}:remove`);

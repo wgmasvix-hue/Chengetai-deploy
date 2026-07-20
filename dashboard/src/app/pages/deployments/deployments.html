@@ -15,6 +15,7 @@
       <button (click)="act(d, 'stop')"    [disabled]="busy()">Stop</button>
       <button (click)="act(d, 'restart')" [disabled]="busy()">Restart</button>
       <button (click)="act(d, 'backup')"  [disabled]="busy()">Backup</button>
+      <button (click)="openManager(d)" [disabled]="busy()">Manager</button>
       <button class="danger" (click)="remove(d)" [disabled]="busy()">Remove</button>
     </div>
   </div>
