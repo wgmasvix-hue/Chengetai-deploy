@@ -14,6 +14,7 @@
 PLUGIN_NAME="moodle"
 PLUGIN_DESCRIPTION="Moodle learning management system"
 PLUGIN_STATUS="available"
+PLUGIN_HEALTH_PATH="/login/index.php"
 
 ENGINE_TEMPLATE="$TEMPLATES_DIR/moodle/engine"
 

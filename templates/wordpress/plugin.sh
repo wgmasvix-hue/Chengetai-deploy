@@ -11,6 +11,7 @@
 PLUGIN_NAME="wordpress"
 PLUGIN_DESCRIPTION="WordPress website / CMS"
 PLUGIN_STATUS="available"
+PLUGIN_HEALTH_PATH="/wp-login.php"
 
 ENGINE_TEMPLATE="$TEMPLATES_DIR/wordpress/engine"
 

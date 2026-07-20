@@ -76,6 +76,7 @@ prints the frontend and backend URLs.
 | `chengetai stop [name]` | Stop a deployment (data is preserved). |
 | `chengetai restart [name]` | Restart services. |
 | `chengetai status [name]` | Show service status and URL health. |
+| `chengetai verify [name]` | Smoke-test a deployment (engine, containers, web health). |
 | `chengetai logs [name] [service...]` | Follow logs. |
 | `chengetai backup [name]` | Back up the database and uploaded files. |
 | `chengetai restore [name] [dir]` | Restore a backup (most recent by default). |

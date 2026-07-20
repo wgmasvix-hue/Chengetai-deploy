@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.13.0
+
+- **`chengetai verify [name]` — per-platform smoke test.** Checks the engine
+  is present, the containers are running, and the web endpoint is actually
+  serving (probing each platform's health path, with retries for slow first
+  boots). Exits non-zero on failure, so it doubles as a health gate in
+  scripts/CI. Plugins declare their health path via `PLUGIN_HEALTH_PATH`
+  (Moodle `/login/index.php`, Nextcloud `/status.php`, WordPress
+  `/wp-login.php`; others default to `/`). New `docs/VERIFICATION.md` is a
+  per-platform checklist with expected results and common gotchas.
+
 ## 2.12.0
 
 - **New platforms: Nextcloud and WordPress.** `chengetai deploy nextcloud`
