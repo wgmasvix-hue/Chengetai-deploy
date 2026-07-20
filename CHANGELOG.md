@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.6.0
+
+- **`chengetai manager [name]`** — a small, local, per-deployment web
+  console. Serves a single self-contained page (zero npm dependencies,
+  Node built-ins only) bound to `127.0.0.1` and gated by a per-session
+  token: check status, start/stop/restart, back up, view recent logs, and
+  create/reset the administrator. Every action shells out to the same
+  `chengetai` CLI (one code path); actions are allow-listed. The default
+  port derives from the deployment's UI port so multiple managers never
+  collide. Reach it via an SSH tunnel.
+
 ## 2.5.0
 
 - **`chengetai domain [name] <domain>`** — one command puts a deployment

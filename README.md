@@ -82,6 +82,7 @@ prints the frontend and backend URLs.
 | `chengetai edit <component> [name]` | Edit the logo, favicon, UI config or communities, then rebuild. |
 | `chengetai admin [name]` | Create or reset the administrator account against the running backend (no redeploy). |
 | `chengetai domain [name] <domain>` | Put the deployment behind a domain with automatic HTTPS via Caddy. |
+| `chengetai manager [name]` | Launch a local web UI to manage a single deployment. |
 | `chengetai update` | Update ChengetAi Deploy and its deployments. |
 | `chengetai remove [name]` | Remove a deployment. |
 | `chengetai enroll <token>` | Enrol this server with the ChengetAi control plane (managed deployments). |
@@ -90,6 +91,21 @@ prints the frontend and backend URLs.
 | `chengetai help` | Display all commands. |
 
 The deployment name can be omitted whenever only one deployment exists.
+
+## Local manager UI
+
+Each deployment can have its own lightweight web console:
+
+```bash
+chengetai manager <name>     # prints a local URL with an access token
+```
+
+It serves a small page (bound to `127.0.0.1` by default) to check status,
+start/stop/restart, back up, view recent logs, and create/reset the
+administrator — every button shells out to the same `chengetai` CLI. The
+default port is derived from the deployment's UI port, so several
+deployments' managers never collide. Reach it from your laptop with an SSH
+tunnel: `ssh -L <port>:127.0.0.1:<port> <user>@<server>`.
 
 ## Platforms
 
