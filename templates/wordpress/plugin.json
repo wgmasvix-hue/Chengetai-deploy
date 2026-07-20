@@ -1,8 +1,21 @@
 {
   "name": "wordpress",
   "displayName": "WordPress",
-  "description": "WordPress content management system",
-  "status": "coming-soon",
+  "description": "WordPress website / CMS",
+  "status": "available",
   "category": "cms",
-  "operations": []
+  "operations": [
+    "deploy",
+    "start",
+    "stop",
+    "restart",
+    "status",
+    "logs",
+    "backup",
+    "restore",
+    "update",
+    "remove",
+    "edit"
+  ],
+  "notes": "Built from the official Bitnami WordPress images. The administrator is created on first boot from the profile (no web install). Single web port on UI_PORT; the admin password is stored in the engine .env."
 }

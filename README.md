@@ -132,6 +132,8 @@ new platforms can be added without touching the CLI itself.
 | `koha` | Available — Koha library management system |
 | `moodle` | Available — Moodle learning management system |
 | `ojs` | Available — Open Journal Systems (scholarly publishing) |
+| `nextcloud` | Available — Nextcloud file sync & collaboration |
+| `wordpress` | Available — WordPress website / CMS |
 
 ```bash
 chengetai deploy dspace
