@@ -87,11 +87,50 @@ curl https://repo.dare.co.zw/server/api
 - **Extensible** — the same render → validate → launch pipeline will drive
   Koha, Moodle, OJS and others by adding a `platforms/<name>/templates/` set.
 
+## Upgrading a deployment (with automatic rollback)
+
+Once a deployment is generated and running, upgrade it in place — safely:
+
+```bash
+# Upgrade DSpace backend + Angular UI to a specific tag (e.g. 8.1),
+# with a snapshot taken first and automatic rollback if it goes wrong.
+chengetai upgrade ./dare --to 8.1
+
+# Non-interactive (no confirmation prompt):
+chengetai upgrade ./dare --to 8.1 --yes
+
+# Restore an earlier snapshot directly (disaster recovery):
+chengetai upgrade ./dare --rollback 20260720-183314
+```
+
+What `upgrade` does, with structured `[INFO]/[SUCCESS]/[WARNING]/[ERROR]`
+logging:
+
+1. **Snapshot** — copies `docker-compose.yml`, `Caddyfile`, `.env`,
+   `local.cfg`, `config.yml`, `healthcheck.sh` **and a `pg_dump` of the
+   database** into `./dare/upgrades/<timestamp>/`.
+2. **Retag** — rewrites the `dspace/dspace` and `dspace/dspace-angular` image
+   tags to the target in `docker-compose.yml`.
+3. **Pull + recreate** — `docker compose pull` then `up -d`.
+4. **Health-check** — runs the generated `healthcheck.sh` with retries
+   (DSpace runs DB migrations on first boot, which is slow).
+5. **Roll back on any failure** — restores the snapshot files **and the
+   database**, brings the previous version back up, and re-verifies. A bad
+   upgrade never leaves the repository down or loses data: the database,
+   assetstore, Caddyfile/SSL, branding and `.env` are all preserved.
+
+On success the snapshot is kept as a rollback point, and the exact command to
+roll back is printed.
+
 ## Status
 
 - ✅ Prototype: `deployment.yml` parsing, template rendering, no-IP guard,
   `docker compose config` validation, structured logging, `--up` pipeline with
-  teardown-on-failure — all verified.
-- ⏳ Next: DNS provider plugins, the upgrade engine with rollback, and wiring
-  the generated engine into the dashboard. Real end-to-end boot needs a server
+  teardown-on-failure — all verified. Confirmed rendering live on a server for
+  `repo.dare.co.zw`.
+- ✅ Upgrade engine: `chengetai upgrade` with snapshot (config + database),
+  image retag, health-check and **automatic rollback** — snapshot/retag/restore
+  mechanics verified with a mocked Docker; real end-to-end boot needs a server
   with Docker Hub access.
+- ⏳ Next: DNS provider plugins and wiring the generated engine into the
+  dashboard.
