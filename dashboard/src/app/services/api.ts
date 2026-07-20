@@ -34,6 +34,10 @@ export class ApiService {
   deploymentStatus(name: string) {
     return this.http.get<{ deployment: string; output: string }>(`${this.apiUrl}/deployments/${name}/status`);
   }
+  startManager(name: string) {
+    return this.http.post<{ url: string; port: number; running: boolean }>(
+      `${this.apiUrl}/deployments/${name}/manager`, {});
+  }
   deleteDeployment(name: string, purge = false) {
     return this.http.delete<{ jobId: string }>(`${this.apiUrl}/deployments/${name}?purge=${purge}`);
   }

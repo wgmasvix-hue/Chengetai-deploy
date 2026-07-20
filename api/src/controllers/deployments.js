@@ -1,6 +1,7 @@
 const deploymentsService = require('../services/deployments');
 const cli = require('../services/cli');
 const jobs = require('../services/jobs');
+const managers = require('../services/managers');
 
 const NAME_RE = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -87,6 +88,23 @@ function action(req, res) {
   return res.status(202).json({ jobId: job.id, deployment: name, action: act });
 }
 
+// Start (or reuse) the deployment's local manager UI and return a link the
+// dashboard can open. The manager binds on the server and is gated by a
+// per-session token embedded in the URL.
+async function manager(req, res) {
+  const { name } = req.params;
+  if (!deploymentsService.list().some((d) => d.name === name)) {
+    return res.status(404).json({ error: `Deployment '${name}' not found` });
+  }
+  const hostname = (req.headers.host || '127.0.0.1').split(':')[0] || '127.0.0.1';
+  try {
+    const info = await managers.start(name, hostname);
+    return res.json(info);
+  } catch (err) {
+    return res.status(500).json({ error: `Could not start manager: ${err.message}` });
+  }
+}
+
 async function status(req, res) {
   const { name } = req.params;
   if (!deploymentsService.list().some((d) => d.name === name)) {
@@ -113,4 +131,4 @@ function remove(req, res) {
   res.status(202).json({ jobId: job.id, deployment: name });
 }
 
-module.exports = { list, create, action, status, remove };
+module.exports = { list, create, action, status, remove, manager };

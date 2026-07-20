@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.7.0
+
+- **Dashboard: "Manager" button.** Each deployment on the dashboard now has
+  a Manager button that starts (or reuses) that deployment's local manager
+  UI and opens it in a new tab. New API endpoint
+  `POST /deployments/:name/manager` spawns the manager detached, parses the
+  URL + token it prints, tracks it (idempotent — an already-running manager
+  is reused), and returns a link on the same host the dashboard was reached
+  on. Engineer role required.
+
 ## 2.6.0
 
 - **`chengetai manager [name]`** — a small, local, per-deployment web
