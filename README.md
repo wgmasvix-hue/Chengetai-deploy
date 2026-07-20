@@ -130,7 +130,7 @@ new platforms can be added without touching the CLI itself.
 |---|---|
 | `dspace` | Available — DSpace 8 institutional repository |
 | `koha` | Available — Koha library management system |
-| `moodle` | Coming soon |
+| `moodle` | Available — Moodle learning management system |
 | `ojs` | Coming soon |
 
 ```bash

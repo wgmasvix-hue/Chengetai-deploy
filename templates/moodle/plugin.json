@@ -2,7 +2,20 @@
   "name": "moodle",
   "displayName": "Moodle",
   "description": "Moodle learning management system",
-  "status": "coming-soon",
-  "category": "education",
-  "operations": []
+  "status": "available",
+  "category": "elearning",
+  "operations": [
+    "deploy",
+    "start",
+    "stop",
+    "restart",
+    "status",
+    "logs",
+    "backup",
+    "restore",
+    "update",
+    "remove",
+    "edit"
+  ],
+  "notes": "Built from the official Bitnami Moodle images. The administrator is created on first boot from the profile (no web installer). Single web port on UI_PORT; the admin password is stored in the engine .env."
 }
