@@ -11,6 +11,7 @@
 PLUGIN_NAME="nextcloud"
 PLUGIN_DESCRIPTION="Nextcloud file sync & collaboration"
 PLUGIN_STATUS="available"
+PLUGIN_HEALTH_PATH="/status.php"
 
 ENGINE_TEMPLATE="$TEMPLATES_DIR/nextcloud/engine"
 

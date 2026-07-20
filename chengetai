@@ -27,6 +27,7 @@ Usage:
  chengetai stop [name]                Stop a deployment
  chengetai restart [name]             Restart services
  chengetai status [name]              Show service status
+ chengetai verify [name]              Smoke-test a deployment (engine, containers, web health)
  chengetai logs [name] [service...]   View logs
  chengetai backup [name]              Create a backup
  chengetai restore [name] [dir]       Restore a backup
@@ -52,7 +53,7 @@ CMD="${1:-}"
 
 case "$CMD" in
 
-install|doctor|create|deploy|start|stop|restart|status|logs|backup|restore|edit|admin|domain|manager|update|remove|enroll|agent)
+install|doctor|create|deploy|start|stop|restart|status|verify|logs|backup|restore|edit|admin|domain|manager|update|remove|enroll|agent)
     exec bash "$CHENGETAI_HOME/lib/$CMD.sh" "$@"
     ;;
 
