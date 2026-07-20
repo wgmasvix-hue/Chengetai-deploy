@@ -14,15 +14,16 @@ jobs:
       - name: Syntax-check all shell scripts
         run: |
           fail=0
-          for f in chengetai install-cli.sh lib/*.sh templates/*/plugin.sh; do
+          for f in chengetai install-cli.sh install-online.sh lib/*.sh templates/*/plugin.sh; do
             bash -n "$f" || fail=1
           done
           exit $fail
-      - name: ShellCheck
+      - name: node --check server-side JS in lib
+        run: node --check lib/manager/server.js
+      - name: ShellCheck (errors fail the build)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y shellcheck
-          # Advisory: report but don't fail the build on style findings.
-          shellcheck -S error lib/*.sh templates/*/plugin.sh || true
+          shellcheck -S error chengetai install-cli.sh install-online.sh lib/*.sh templates/*/plugin.sh
 
   api:
     name: API build & tests
@@ -51,6 +52,59 @@ jobs:
           node-version: '22'
       - run: npm ci || npm install
       - run: npx ng build
+
+  platforms:
+    name: Platform plugins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate plugin.json metadata
+        run: |
+          fail=0
+          for f in templates/*/plugin.json; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" \
+              || { echo "invalid JSON: $f"; fail=1; }
+          done
+          exit $fail
+      - name: Validate engine compose files
+        run: |
+          cat > /tmp/dummy.env <<'EOF'
+          SERVER_IP=10.0.0.5
+          SERVERNAME=10.0.0.5
+          UI_PORT=8099
+          REST_PORT=8100
+          OPAC_PORT=8099
+          STAFF_PORT=8100
+          INSTANCE=test
+          DB_PASSWORD=pw1
+          DB_ROOT_PASSWORD=pw2
+          KOHA_ADMIN_USER=admin
+          KOHA_ADMIN_PASS=Secret123
+          LIBRARY_NAME=TestLibrary
+          MOODLE_ADMIN_USER=admin
+          MOODLE_ADMIN_PASS=Secret123@
+          MOODLE_ADMIN_EMAIL=a@b.co
+          MOODLE_SITE_NAME=TestMoodle
+          WP_ADMIN_USER=admin
+          WP_ADMIN_PASS=Secret123@
+          WP_ADMIN_EMAIL=a@b.co
+          WP_SITE_NAME=TestSite
+          NC_ADMIN_USER=admin
+          NC_ADMIN_PASS=Secret123@
+          NC_TRUSTED_DOMAINS=10.0.0.5
+          OJS_ADMIN_EMAIL=a@b.co
+          JOURNAL_NAME=TestJournal
+          EOF
+          fail=0
+          for cf in templates/*/engine/docker-compose.yml; do
+            dir=$(dirname "$cf")
+            if docker compose --env-file /tmp/dummy.env -f "$cf" --project-directory "$dir" config >/dev/null; then
+              echo "ok: $cf"
+            else
+              echo "INVALID: $cf"; fail=1
+            fi
+          done
+          exit $fail
 
   security:
     name: Security scan
