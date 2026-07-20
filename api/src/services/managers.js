@@ -59,37 +59,47 @@ function portAlive(port, host = '127.0.0.1', timeout = 800) {
   });
 }
 
-function publicInfo(rec, hostname) {
+function publicInfo(rec) {
+  // Raw connection facts; the controller builds the reverse-proxy URL.
   return {
-    url: `http://${hostname}:${rec.port}/?t=${rec.token}`,
     port: rec.port,
+    token: rec.token,
     running: true,
-    startedAt: rec.startedAt,
+    startedAt: rec.startedAt || null,
   };
+}
+
+// Synchronous lookup of a deployment's manager (registry, else persisted).
+// Used by the reverse proxy to validate the token and find the port.
+function lookup(name) {
+  const rec = managers.get(name);
+  if (rec) return { port: rec.port, token: rec.token };
+  const persisted = readPersisted(name);
+  return persisted ? { port: persisted.port, token: persisted.token } : null;
 }
 
 // Start (or reuse) the manager for `name`. `hostname` is the host the
 // dashboard was reached on, so the returned URL points at the same host as
 // the manager's own port.
-async function start(name, hostname) {
+async function start(name) {
   // 1. An always-on service (or any manager already listening on the
   //    persisted port) — just hand back its stable URL.
   const persisted = readPersisted(name);
   if (persisted && (await portAlive(persisted.port))) {
-    return publicInfo({ ...persisted, startedAt: null }, hostname);
+    return publicInfo({ ...persisted, startedAt: null });
   }
 
   // 2. A manager this process spawned earlier and is still alive.
   const existing = managers.get(name);
   if (existing && alive(existing.pid)) {
-    return publicInfo(existing, hostname);
+    return publicInfo(existing);
   }
 
   // 3. Cold-start one on demand.
   return new Promise((resolve, reject) => {
-    // Bind 0.0.0.0 so the dashboard user's browser can reach it; the manager
-    // is gated by the per-session token it prints.
-    const child = spawn('bash', [cli.cliPath(), 'manager', name, '--bind', '0.0.0.0'], {
+    // Bind 127.0.0.1: the manager is never openly exposed. The dashboard
+    // reaches it through the API's authenticated reverse proxy.
+    const child = spawn('bash', [cli.cliPath(), 'manager', name, '--bind', '127.0.0.1'], {
       env: { ...process.env, CHENGETAI_DEPLOYMENTS_DIR: config.deploymentsDir },
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -112,7 +122,7 @@ async function start(name, hostname) {
         managers.set(name, rec);
         cleanup();
         child.unref();
-        resolve(publicInfo(rec, hostname));
+        resolve(publicInfo(rec));
       }
     };
 
@@ -149,10 +159,10 @@ async function start(name, hostname) {
   });
 }
 
-function status(name, hostname) {
+function status(name) {
   const rec = managers.get(name);
-  if (rec && alive(rec.pid)) return publicInfo(rec, hostname);
+  if (rec && alive(rec.pid)) return publicInfo(rec);
   return { running: false };
 }
 
-module.exports = { start, status };
+module.exports = { start, status, lookup };

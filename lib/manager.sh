@@ -42,7 +42,10 @@ MGRENV="$DEPLOY_DIR/manager.env"
 # shellcheck source=/dev/null
 [ -f "$MGRENV" ] && . "$MGRENV"
 MANAGER_PORT="${PORT_FLAG:-${MANAGER_PORT:-$(( $(ui_port) + 1000 ))}}"
-MANAGER_BIND="${BIND_FLAG:-${MANAGER_BIND:-0.0.0.0}}"
+# Localhost by default: the manager is reached through the dashboard's
+# authenticated proxy or an SSH tunnel, never an open port. --bind can widen
+# it, but that's discouraged.
+MANAGER_BIND="${BIND_FLAG:-${MANAGER_BIND:-127.0.0.1}}"
 if [ -z "${MANAGER_TOKEN:-}" ]; then
     MANAGER_TOKEN="$(openssl rand -hex 8 2>/dev/null || head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 fi

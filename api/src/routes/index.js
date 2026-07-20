@@ -66,6 +66,12 @@ router.post(
 router.post('/fleet/heartbeat', authenticateAgent, fleet.heartbeat);
 router.post('/fleet/commands/:id/result', authenticateAgent, fleet.commandResult);
 
+// Manager reverse proxy — public route, gated by the manager token (a new
+// browser tab can't carry the dashboard JWT). Forwards to the deployment's
+// 127.0.0.1-bound manager, which is never itself exposed.
+router.all('/deployments/:name/manager/proxy', deployments.managerProxy);
+router.all('/deployments/:name/manager/proxy/*splat', deployments.managerProxy);
+
 // ── Authenticated ─────────────────────────────────────────────────────────
 router.use(authenticate, audit);
 

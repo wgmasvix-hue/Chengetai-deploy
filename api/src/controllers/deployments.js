@@ -1,3 +1,4 @@
+const http = require('http');
 const deploymentsService = require('../services/deployments');
 const cli = require('../services/cli');
 const jobs = require('../services/jobs');
@@ -89,20 +90,55 @@ function action(req, res) {
 }
 
 // Start (or reuse) the deployment's local manager UI and return a link the
-// dashboard can open. The manager binds on the server and is gated by a
-// per-session token embedded in the URL.
+// dashboard can open. The manager binds to 127.0.0.1 (never exposed); the
+// returned URL points at the API's reverse proxy below, which forwards to it.
 async function manager(req, res) {
   const { name } = req.params;
   if (!deploymentsService.list().some((d) => d.name === name)) {
     return res.status(404).json({ error: `Deployment '${name}' not found` });
   }
-  const hostname = (req.headers.host || '127.0.0.1').split(':')[0] || '127.0.0.1';
   try {
-    const info = await managers.start(name, hostname);
-    return res.json(info);
+    const info = await managers.start(name);
+    const scheme = String(req.headers['x-forwarded-proto'] || req.protocol || 'http').split(',')[0];
+    const host = req.headers.host || '127.0.0.1';
+    // Trailing slash matters: the manager page uses relative fetch paths.
+    const url = `${scheme}://${host}/api/deployments/${encodeURIComponent(name)}/manager/proxy/?t=${info.token}`;
+    return res.json({ url, running: info.running });
   } catch (err) {
     return res.status(500).json({ error: `Could not start manager: ${err.message}` });
   }
+}
+
+// Reverse-proxy to a deployment's localhost-bound manager. Public route,
+// gated by the manager token (a new browser tab can't carry the dashboard
+// JWT). Keeps the manager off any open port — traffic rides the API's
+// channel (which can be HTTPS via the dashboard's nginx).
+function managerProxy(req, res) {
+  const { name } = req.params;
+  const rec = managers.lookup(name);
+  if (!rec) return res.status(404).json({ error: 'No manager running for this deployment' });
+  if (!req.query.t || req.query.t !== rec.token) {
+    return res.status(403).json({ error: 'Forbidden — missing or wrong manager token' });
+  }
+  let sub = req.params.splat;
+  if (Array.isArray(sub)) sub = sub.join('/');
+  sub = sub || '';
+  const qs = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+  const opts = {
+    host: '127.0.0.1',
+    port: rec.port,
+    method: req.method,
+    path: `/${sub}${qs}`,
+    headers: { ...req.headers, host: `127.0.0.1:${rec.port}` },
+  };
+  const preq = http.request(opts, (pres) => {
+    res.writeHead(pres.statusCode || 502, pres.headers);
+    pres.pipe(res);
+  });
+  preq.on('error', () => {
+    if (!res.headersSent) res.status(502).json({ error: 'Manager unavailable' });
+  });
+  req.pipe(preq);
 }
 
 async function status(req, res) {
@@ -131,4 +167,4 @@ function remove(req, res) {
   res.status(202).json({ jobId: job.id, deployment: name });
 }
 
-module.exports = { list, create, action, status, remove, manager };
+module.exports = { list, create, action, status, remove, manager, managerProxy };
