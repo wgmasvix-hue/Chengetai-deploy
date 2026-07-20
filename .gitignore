@@ -23,4 +23,3 @@ Thumbs.db
 
 # API runtime data (JSON store, generated secrets)
 api/data/
-registry.db

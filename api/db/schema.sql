@@ -60,6 +60,28 @@ CREATE TABLE IF NOT EXISTS terminal_sessions (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_email       ON users ((data->>'email'));
-CREATE INDEX IF NOT EXISTS idx_audit_created_at  ON audit_logs (created_at);
-CREATE INDEX IF NOT EXISTS idx_logs_created_at   ON logs (created_at);
+-- Fleet control plane (managed deployments).
+CREATE TABLE IF NOT EXISTS fleet_agents (
+  id          TEXT PRIMARY KEY,
+  data        JSONB NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS enrollment_tokens (
+  id          TEXT PRIMARY KEY,
+  data        JSONB NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS fleet_commands (
+  id          TEXT PRIMARY KEY,
+  data        JSONB NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email        ON users ((data->>'email'));
+CREATE INDEX IF NOT EXISTS idx_audit_created_at   ON audit_logs (created_at);
+CREATE INDEX IF NOT EXISTS idx_logs_created_at    ON logs (created_at);
+CREATE INDEX IF NOT EXISTS idx_agents_token       ON fleet_agents ((data->>'agentTokenHash'));
+CREATE INDEX IF NOT EXISTS idx_enroll_token       ON enrollment_tokens ((data->>'tokenHash'));
+CREATE INDEX IF NOT EXISTS idx_commands_agent     ON fleet_commands ((data->>'agentId'));

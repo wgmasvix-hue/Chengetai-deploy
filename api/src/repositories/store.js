@@ -33,6 +33,10 @@ class JsonCollection {
     return this.rows.find((r) => r[field] === value) || null;
   }
 
+  async filter(field, value) {
+    return this.rows.filter((r) => r[field] === value);
+  }
+
   async insert(row) {
     this.rows.push(row);
     this.persist();
@@ -59,4 +63,9 @@ module.exports = {
   users: new JsonCollection('users'),
   servers: new JsonCollection('servers'),
   auditLogs: new JsonCollection('audit-logs'),
+  // Fleet control plane: enrolled deployments, the tokens that admit them,
+  // and the command queue the agents drain on each heartbeat.
+  fleetAgents: new JsonCollection('fleet-agents'),
+  enrollmentTokens: new JsonCollection('enrollment-tokens'),
+  fleetCommands: new JsonCollection('fleet-commands'),
 };

@@ -2,6 +2,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 
 const { authenticate, requireRole } = require('../middleware/auth');
+const { authenticateAgent } = require('../middleware/agentAuth');
 const validate = require('../middleware/validate');
 const audit = require('../middleware/audit');
 const auth = require('../controllers/auth');
@@ -10,6 +11,7 @@ const servers = require('../controllers/servers');
 const deployments = require('../controllers/deployments');
 const jobsCtrl = require('../controllers/jobs');
 const users = require('../controllers/users');
+const fleet = require('../controllers/fleet');
 const pluginsService = require('../services/plugins');
 const pkg = require('../../package.json');
 
@@ -37,6 +39,32 @@ router.post(
   }),
   auth.login
 );
+
+// ── Fleet agents (agent-token auth, not JWT) ───────────────────────────────
+// Servers enroll and then heartbeat here. These sit before the JWT gate
+// because agents authenticate with their own token, not a user session.
+const enrollLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many enrollment attempts — try again later' },
+});
+router.post(
+  '/fleet/enroll',
+  enrollLimiter,
+  validate({
+    enrollmentToken: { required: true, type: 'string', maxLength: 200 },
+    name: { type: 'string', maxLength: 100 },
+    platform: { type: 'string', maxLength: 40 },
+    hostname: { type: 'string', maxLength: 200 },
+    publicIp: { type: 'string', maxLength: 60 },
+    version: { type: 'string', maxLength: 40 },
+  }),
+  fleet.enroll
+);
+router.post('/fleet/heartbeat', authenticateAgent, fleet.heartbeat);
+router.post('/fleet/commands/:id/result', authenticateAgent, fleet.commandResult);
 
 // ── Authenticated ─────────────────────────────────────────────────────────
 router.use(authenticate, audit);
@@ -110,5 +138,35 @@ router.post(
 );
 router.patch('/users/:id', requireRole('admin'), users.update);
 router.delete('/users/:id', requireRole('admin'), users.remove);
+
+// ── Fleet control plane (operators) ────────────────────────────────────────
+// Managed deployments: issue enrollment tokens, view the fleet, push
+// commands, and revoke/reactivate a deployment's license (Model A kill
+// switch — stops services, preserves data).
+router.get('/fleet/agents', fleet.listAgents);
+router.get('/fleet/agents/:id', fleet.getAgent);
+router.get('/fleet/agents/:id/commands', fleet.listCommands);
+router.post(
+  '/fleet/agents/:id/commands',
+  requireRole('engineer'),
+  validate({
+    command: { required: true, type: 'string', maxLength: 40 },
+  }),
+  fleet.queueCommand
+);
+router.post('/fleet/agents/:id/revoke', requireRole('admin'), fleet.revoke);
+router.post('/fleet/agents/:id/reactivate', requireRole('admin'), fleet.reactivate);
+router.delete('/fleet/agents/:id', requireRole('admin'), fleet.deregister);
+
+router.get('/fleet/enrollment-tokens', requireRole('engineer'), fleet.listTokens);
+router.post(
+  '/fleet/enrollment-tokens',
+  requireRole('engineer'),
+  validate({
+    label: { type: 'string', maxLength: 100 },
+    ttlMinutes: { type: 'number' },
+  }),
+  fleet.issueToken
+);
 
 module.exports = router;

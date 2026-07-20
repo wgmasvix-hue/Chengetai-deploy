@@ -13,18 +13,26 @@ It ships three tiers — an Angular dashboard, a Node/Express REST API, and a
 Bash CLI + plugin engine. See `docs/ARCHITECTURE.md` for the full design,
 `docs/API.md` for the REST API, and `docs/PLUGIN-GUIDE.md` to add a platform.
 
+**Deploying DSpace?** Follow `docs/DEPLOY-DSPACE.md` — the exact,
+field-tested flow from a fresh server to a live site, including custom
+domain + HTTPS with nginx.
+
+**Managed deployments?** `docs/FLEET.md` describes the fleet control plane —
+enrol servers, drive them remotely, and disable any deployment centrally
+(services stop, data preserved). Standalone use is unaffected.
+
 ## Install (one command)
 
 On a fresh Ubuntu 22.04/24.04 server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/claude/dspace-deployment-review-98kzqb/install-online.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/main/install-online.sh | sudo bash
 ```
 
 Add a DSpace repository in the same run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/claude/dspace-deployment-review-98kzqb/install-online.sh | sudo bash -s -- --with-dspace
+curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/main/install-online.sh | sudo bash -s -- --with-dspace
 ```
 
 It installs the CLI, API and dashboard, wires nginx, and prints your
@@ -72,8 +80,11 @@ prints the frontend and backend URLs.
 | `chengetai backup [name]` | Back up the database and uploaded files. |
 | `chengetai restore [name] [dir]` | Restore a backup (most recent by default). |
 | `chengetai edit <component> [name]` | Edit the logo, favicon, UI config or communities, then rebuild. |
+| `chengetai admin [name]` | Create or reset the administrator account against the running backend (no redeploy). |
 | `chengetai update` | Update ChengetAi Deploy and its deployments. |
 | `chengetai remove [name]` | Remove a deployment. |
+| `chengetai enroll <token>` | Enrol this server with the ChengetAi control plane (managed deployments). |
+| `chengetai agent <run\|once\|status>` | Fleet agent — heartbeat and remote commands. |
 | `chengetai version` | Show version information. |
 | `chengetai help` | Display all commands. |
 
@@ -88,7 +99,7 @@ new platforms can be added without touching the CLI itself.
 | Platform | Status |
 |---|---|
 | `dspace` | Available — DSpace 8 institutional repository |
-| `koha` | Coming soon |
+| `koha` | Available — Koha library management system |
 | `moodle` | Coming soon |
 | `ojs` | Coming soon |
 

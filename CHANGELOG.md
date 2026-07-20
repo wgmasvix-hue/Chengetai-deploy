@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.4.0
+
+- **Managed deployments (fleet control plane).** Servers enrol with a
+  central control plane (the API), heartbeat, and execute commands pushed
+  from the dashboard. Operators can start/stop/restart/update/backup any
+  deployment remotely, and **revoke/reactivate** a deployment's licence —
+  a kill switch that stops services but never deletes data. `chengetai
+  deploy` refuses on a managed-but-unenrolled server; standalone servers
+  are unaffected (backward compatible). New: `chengetai enroll`,
+  `chengetai agent`; see `docs/FLEET.md`.
+- **`chengetai admin`** — create or reset a deployment's administrator
+  against the already-running backend, no redeploy. Fixes the "passwords
+  do not match" dead-end; `--generate` mints a random password. Deploy now
+  prints a tidy summary (URLs + how to manage the admin).
+- This release consolidates ChengetAi Deploy onto the plugin architecture
+  as the single canonical line (the version proven in production).
+
+## 2.3.0
+
+- New platform: **Koha** library management system. `chengetai deploy koha`
+  builds Koha from its official koha-common Debian package with MariaDB,
+  per-deployment generated passwords and ports (OPAC on UI_PORT, Staff on
+  REST_PORT), and the full lifecycle (start/stop/backup/restore/update/
+  remove). Koha's one-time web installer completes setup in the browser.
+
 ## 2.2.0
 
 - One-command installer (install-online.sh): curl | sudo bash installs
