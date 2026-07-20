@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.8.0
+
+- **Always-on manager service.** `chengetai manager <name> --install`
+  registers a per-deployment systemd service (a `chengetai-manager@<name>`
+  instance) that keeps the manager UI running and restarts it on boot;
+  `--uninstall` removes it, `--status` shows state + URL. The access token
+  and port are now **persisted** per deployment (`manager.env`, mode 600),
+  so the URL is stable across restarts. The dashboard's Manager button and
+  API return the running service's URL directly (liveness-checked) and only
+  cold-start a manager when none is running.
+
 ## 2.7.0
 
 - **Dashboard: "Manager" button.** Each deployment on the dashboard now has
