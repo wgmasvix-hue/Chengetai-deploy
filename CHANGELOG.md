@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.18.1
+
+- **Fix: installer no longer aborts when nginx isn't already running.** On some
+  minimal server images the nginx package install doesn't leave the service
+  running, so `bootstrap.sh`'s `systemctl reload nginx` failed and — under
+  `set -e` — aborted the whole install *before the DSpace deploy step*. Nginx is
+  now enabled and started (with a restart fallback), and every step is guarded
+  so a nginx hiccup only warns instead of killing the install.
+
 ## 2.18.0
 
 - **One command installs ChengetAi *and* deploys DSpace — fully
