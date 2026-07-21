@@ -6,8 +6,17 @@
 #
 #    curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/main/install-online.sh | sudo bash
 #
-#  Add DSpace in the same run:
-#    ... | sudo bash -s -- --with-dspace
+#  Install ChengetAi AND deploy a DSpace repository in one command:
+#    curl -fsSL <url> | sudo bash -s -- --with-dspace
+#
+#  This is fully non-interactive — nothing is ever prompted and no password
+#  is required. The DSpace admin password is generated and printed at the end.
+#  Override any default by exporting it before the install (values carry
+#  through sudo):
+#    curl -fsSL <url> | sudo INSTITUTION='Harare Poly' \
+#        ADMIN_EMAIL='admin@hpoly.ac.zw' bash -s -- --with-dspace
+#  Recognised overrides: INSTITUTION, REPOSITORY, ADMIN_EMAIL,
+#  ADMIN_FIRST_NAME, ADMIN_LAST_NAME, ADMIN_PASS, DEPLOYMENT_NAME.
 #
 #  Safe to re-run: it updates in place and never touches your existing
 #  deployments, admin password, or API data (all kept out of git). If an
