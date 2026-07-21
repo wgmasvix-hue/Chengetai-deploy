@@ -68,7 +68,17 @@ say "Configuring nginx..."
 cp "$DEST/deploy/nginx.conf" /etc/nginx/sites-available/chengetai
 ln -sf /etc/nginx/sites-available/chengetai /etc/nginx/sites-enabled/chengetai
 rm -f /etc/nginx/sites-enabled/default
-nginx -t >/dev/null 2>&1 && systemctl reload nginx
+# Start (not just reload) nginx: on some minimal images the package install
+# does not leave the service running, so a plain `reload` fails. None of this
+# must abort the install (we are under `set -e`), so every step is guarded.
+if nginx -t >/dev/null 2>&1; then
+  systemctl enable nginx >/dev/null 2>&1 || true
+  systemctl reload nginx >/dev/null 2>&1 \
+    || systemctl restart nginx >/dev/null 2>&1 \
+    || warn "nginx is installed but could not be started — run: systemctl enable --now nginx"
+else
+  warn "nginx config test failed — skipping reload. Check /etc/nginx/sites-available/chengetai"
+fi
 
 # 6. Optional: deploy DSpace straight away ------------------------------------
 # Fully non-interactive: the profile and admin account are supplied through the
