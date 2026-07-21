@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.18.0
+
+- **One command installs ChengetAi *and* deploys DSpace — fully
+  non-interactive.** `curl -fsSL <install-online.sh> | sudo bash -s -- --with-dspace`
+  now installs the platform and stands up a DSpace repository end to end with
+  no prompts and no password to type (it runs under `curl | bash`, which has no
+  TTY). `deploy/bootstrap.sh` supplies the deployment profile and admin account
+  through the environment — every value has a sensible default and can be
+  overridden inline (`sudo INSTITUTION='Harare Poly' ADMIN_EMAIL=... bash -s -- --with-dspace`),
+  and the admin password is generated and printed in the summary if you don't
+  set `ADMIN_PASS`. Recognised overrides: `INSTITUTION`, `REPOSITORY`,
+  `ADMIN_EMAIL`, `ADMIN_FIRST_NAME`, `ADMIN_LAST_NAME`, `ADMIN_PASS`,
+  `DEPLOYMENT_NAME`. The final summary prints the repository URL and admin
+  login. CI now shellchecks `deploy/*.sh` too.
+
 ## 2.17.0
 
 - **v3 upgrade engine with automatic rollback: `chengetai upgrade`.** Upgrades a
