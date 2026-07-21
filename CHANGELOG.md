@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.20.0
+
+- **Institutional branding: `chengetai brand`.** Make a deployed repository
+  present as the institution's own, not "DSpace". Sets the repository name,
+  short name, publisher and preview brand (and, via the site name, the
+  **browser-tab title**) in the running backend's config — no rebuild — and
+  stages the institution **logo + favicon**, baked into the frontend image with
+  `--apply`. Values persist in a per-deployment `branding/brand.env` and merge
+  on re-run; the short name defaults to the institution's initials. Identity
+  keys are written **in place** into `local.cfg` (never duplicated — DSpace
+  combines duplicate keys into a list, which would break the title), and the
+  awk-based setter is mawk-compatible for stock Ubuntu. `--status` reports the
+  current profile. Docs in `docs/BRANDING.md`. Phase 1a of full institutional
+  branding; colours/footer/login/error pages (a themed Angular source build) are
+  Phase 1b.
+
 ## 2.19.0
 
 - **ORCID integration: `chengetai orcid`.** Turn a deployed repository into part

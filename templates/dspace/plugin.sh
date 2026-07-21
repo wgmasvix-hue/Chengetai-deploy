@@ -108,6 +108,133 @@ plugin_admin() {
     fi
 }
 
+# ── Institutional branding ──────────────────────────────────────────────────
+# Make the repository read as the institution's own, not "DSpace". The name,
+# short name, publisher and preview brand live in local.cfg (the only mounted
+# config), so a `restart dspace` applies them with no rebuild; the browser tab
+# title follows the site name automatically. Logo + favicon are staged into the
+# deployment's branding/ and baked into the Angular image on --apply. (Colours,
+# footer, login and error-page styling are compiled into the frontend image and
+# need a themed source build — see docs/BRANDING.md.)
+
+# Set (or replace, in place) a "key = value" in a DSpace .cfg. DSpace's config
+# combines duplicate keys into a list rather than taking the last, so we must
+# replace the existing line, never append a second one. Portable (no gawk
+# gensub): the key/value are passed via the environment so any characters in an
+# institution name are handled literally.
+_brand_set_key() {
+    local cfg="$1" key="$2" val="$3"
+    BKEY="$key" BVAL="$val" awk '
+      BEGIN { key=ENVIRON["BKEY"]; val=ENVIRON["BVAL"]; done=0; found=0 }
+      {
+        line=$0; t=line; sub(/^[ \t]+/,"",t)
+        if (!done && substr(t,1,length(key))==key) {
+          rest=substr(t,length(key)+1); sub(/^[ \t]*/,"",rest)
+          if (substr(rest,1,1)=="=") { print key " = " val; done=1; found=1; next }
+        }
+        print line
+      }
+      END { if (!found) print key " = " val }
+    ' "$cfg" > "$cfg.tmp" && mv "$cfg.tmp" "$cfg"
+}
+
+plugin_brand() {
+    require_engine
+    local cfg brand
+    cfg="$(engine_dir)/dspace/config/local.cfg"
+    brand="$(branding_dir)"
+    [ -f "$cfg" ] || error "local.cfg not found for '$DEPLOY_NAME' ($cfg). Deploy first."
+
+    local action="set" repo_name="" institution="" shortname="" publisher="" tagline=""
+    local logo="" favicon="" do_apply=0
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --name|--repository) repo_name="$2"; shift 2 ;;
+            --institution)       institution="$2"; shift 2 ;;
+            --shortname)         shortname="$2"; shift 2 ;;
+            --publisher)         publisher="$2"; shift 2 ;;
+            --tagline)           tagline="$2"; shift 2 ;;
+            --logo)              logo="$2"; shift 2 ;;
+            --favicon)           favicon="$2"; shift 2 ;;
+            --apply)             do_apply=1; shift ;;
+            --status)            action="status"; shift ;;
+            *) error "Unknown option for brand: $1" ;;
+        esac
+    done
+
+    mkdir -p "$brand"
+    local envf="$brand/brand.env"
+
+    if [ "$action" = "status" ]; then
+        if [ -f "$envf" ]; then
+            echo -e "${GREEN}✓${NC} Branding for '$DEPLOY_NAME':"
+            sed 's/^/    /' "$envf"
+        else
+            echo -e "${YELLOW}○${NC} No branding profile yet for '$DEPLOY_NAME'."
+            echo "    Set it: chengetai brand $DEPLOY_NAME --name \"DARE Digital Repository\" --institution DARE"
+        fi
+        [ -f "$brand/logo.png" ]    && echo "    logo    : $brand/logo.png"
+        [ -f "$brand/favicon.png" ] && echo "    favicon : $brand/favicon.png"
+        return 0
+    fi
+
+    # Merge previous values with flags (flags win), then persist.
+    # shellcheck disable=SC1090
+    [ -f "$envf" ] && source "$envf"
+    [ -n "$repo_name" ]   && REPOSITORY_NAME="$repo_name"
+    [ -n "$institution" ] && INSTITUTION_NAME="$institution"
+    [ -n "$shortname" ]   && SHORT_NAME="$shortname"
+    [ -n "$publisher" ]   && PUBLISHER="$publisher"
+    [ -n "$tagline" ]     && TAGLINE="$tagline"
+
+    : "${INSTITUTION_NAME:=${REPOSITORY_NAME:-Institutional Repository}}"
+    : "${REPOSITORY_NAME:=$INSTITUTION_NAME}"
+    if [ -z "${SHORT_NAME:-}" ]; then
+        SHORT_NAME="$(printf '%s' "$INSTITUTION_NAME" | awk '{for(i=1;i<=NF;i++) printf toupper(substr($i,1,1))}')"
+    fi
+    : "${PUBLISHER:=$INSTITUTION_NAME}"
+
+    {
+        echo "INSTITUTION_NAME=$(printf '%q' "$INSTITUTION_NAME")"
+        echo "REPOSITORY_NAME=$(printf '%q' "$REPOSITORY_NAME")"
+        echo "SHORT_NAME=$(printf '%q' "$SHORT_NAME")"
+        echo "PUBLISHER=$(printf '%q' "$PUBLISHER")"
+        echo "TAGLINE=$(printf '%q' "${TAGLINE:-}")"
+    } > "$envf"
+
+    [ -n "$logo" ]    && { [ -f "$logo" ] || error "Logo not found: $logo"; cp "$logo" "$brand/logo.png"; info "Logo staged."; }
+    [ -n "$favicon" ] && { [ -f "$favicon" ] || error "Favicon not found: $favicon"; cp "$favicon" "$brand/favicon.png"; info "Favicon staged."; }
+
+    # Institutional identity into local.cfg (in-place; browser title follows name).
+    _brand_set_key "$cfg" "dspace.name" "$REPOSITORY_NAME"
+    _brand_set_key "$cfg" "dspace.shortname" "$SHORT_NAME"
+    _brand_set_key "$cfg" "webui.preview.brand" "$INSTITUTION_NAME"
+    _brand_set_key "$cfg" "webui.preview.brand.abbrev" "$SHORT_NAME"
+    _brand_set_key "$cfg" "crosswalk.dissemination.DataCite.publisher" "$PUBLISHER"
+
+    echo ""
+    info "Branding set for '$DEPLOY_NAME':"
+    echo "    Repository : $REPOSITORY_NAME   (site name + browser tab title)"
+    echo "    Institution: $INSTITUTION_NAME  ($SHORT_NAME)"
+    echo "    Publisher  : $PUBLISHER"
+    echo ""
+
+    if [ "$do_apply" = 1 ]; then
+        info "Applying branding..."
+        apply_branding
+        info "Rebuilding the frontend image (logo/favicon) — this can take a few minutes..."
+        docker build -f "$(engine_dir)/Dockerfile.angular" -t bpoly-dspace-angular:latest "$(engine_dir)" >/dev/null
+        if container_running dspace; then
+            pcompose up -d dspace-angular
+            pcompose restart dspace
+        fi
+        info "Applied. The repository now presents as $REPOSITORY_NAME."
+    else
+        echo "  Apply with: chengetai brand $DEPLOY_NAME --apply   (restarts backend; rebuilds UI if logo/favicon changed)"
+        echo "  Config-only now (names/title):  chengetai restart $DEPLOY_NAME"
+    fi
+}
+
 # ── ORCID integration ───────────────────────────────────────────────────────
 # Enable "Sign in with ORCID" + researcher-identity linking on a running
 # DSpace, or report/disable it. The campus stack bind-mounts ONLY local.cfg
