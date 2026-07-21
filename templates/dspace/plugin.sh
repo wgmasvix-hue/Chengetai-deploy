@@ -108,6 +108,138 @@ plugin_admin() {
     fi
 }
 
+# ── ORCID integration ───────────────────────────────────────────────────────
+# Enable "Sign in with ORCID" + researcher-identity linking on a running
+# DSpace, or report/disable it. The campus stack bind-mounts ONLY local.cfg
+# into the backend, so every setting (including the auth-stack override that
+# adds OrcidAuthentication) is written there; a `restart dspace` applies it.
+ORCID_MARK_BEGIN="# >>> ChengetAi ORCID (managed — do not edit between these markers) >>>"
+ORCID_MARK_END="# <<< ChengetAi ORCID (managed) <<<"
+
+# Remove the managed ORCID block from a local.cfg (idempotent, no-op if absent).
+_orcid_strip() {
+    local cfg="$1" tmp
+    tmp="$(mktemp)"
+    awk -v b="$ORCID_MARK_BEGIN" -v e="$ORCID_MARK_END" '
+        $0==b {skip=1; next}
+        skip && $0==e {skip=0; next}
+        !skip {print}
+    ' "$cfg" > "$tmp"
+    cat "$tmp" > "$cfg"
+    rm -f "$tmp"
+}
+
+plugin_orcid() {
+    require_engine
+    local cfg
+    cfg="$(engine_dir)/dspace/config/local.cfg"
+    [ -f "$cfg" ] || error "local.cfg not found for '$DEPLOY_NAME' ($cfg). Deploy first."
+
+    local action="enable" env="sandbox" client_id="" restart=1
+    local client_secret="${ORCID_CLIENT_SECRET:-}"
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --client-id)         client_id="$2"; shift 2 ;;
+            --client-secret)     client_secret="$2"; shift 2 ;;
+            --sandbox)           env="sandbox"; shift ;;
+            --production|--live) env="production"; shift ;;
+            --status)            action="status"; shift ;;
+            --disable|--off)     action="disable"; shift ;;
+            --no-restart)        restart=0; shift ;;
+            *) error "Unknown option for orcid: $1" ;;
+        esac
+    done
+
+    # The redirect URI DSpace advertises; it MUST be registered with the ORCID
+    # app or the OAuth handshake is rejected.
+    local server_url redirect
+    server_url="$(grep -sE '^dspace\.server\.url[[:space:]]*=' "$cfg" | head -1 | cut -d= -f2- | tr -d ' ')"
+    redirect="${server_url%/}/api/authn/orcid"
+
+    case "$action" in
+      status)
+        if grep -qF "$ORCID_MARK_BEGIN" "$cfg"; then
+            local cur_env cur_id
+            if grep -sE '^orcid\.domain-url' "$cfg" | grep -q sandbox; then
+                cur_env="sandbox"
+            else
+                cur_env="production"
+            fi
+            cur_id="$(grep -sE '^orcid\.application-client-id' "$cfg" | tail -1 | cut -d= -f2- | tr -d ' ')"
+            echo -e "${GREEN}✓${NC} ORCID is ENABLED for '$DEPLOY_NAME'"
+            echo "    Environment  : $cur_env"
+            echo "    Client ID    : ${cur_id:-(unset)}"
+            echo "    Redirect URI : $redirect"
+        else
+            echo -e "${YELLOW}○${NC} ORCID is not configured for '$DEPLOY_NAME' (password login only)."
+            echo "    Enable it: chengetai orcid $DEPLOY_NAME --client-id APP-XXXX --client-secret SECRET"
+        fi
+        return 0 ;;
+      disable)
+        _orcid_strip "$cfg"
+        info "ORCID disabled for '$DEPLOY_NAME' (managed block removed; password login remains)."
+        if [ "$restart" = 1 ] && container_running dspace; then
+            info "Restarting the backend to apply..."
+            pcompose restart dspace
+        fi
+        return 0 ;;
+    esac
+
+    # enable
+    [ -n "$client_id" ] || error "ORCID needs --client-id APP-XXXX (from ORCID → Developer Tools)."
+    [ -n "$client_secret" ] || error "ORCID needs --client-secret (or export ORCID_CLIENT_SECRET to keep it out of shell history)."
+
+    local domain api public
+    if [ "$env" = "production" ]; then
+        domain="https://orcid.org"
+        api="https://api.orcid.org/v3.0"
+        public="https://pub.orcid.org/v3.0"
+    else
+        domain="https://sandbox.orcid.org"
+        api="https://api.sandbox.orcid.org/v3.0"
+        public="https://pub.sandbox.orcid.org/v3.0"
+    fi
+
+    _orcid_strip "$cfg"   # clear any previous managed block, then write fresh
+    {
+        echo ""
+        echo "$ORCID_MARK_BEGIN"
+        echo "# ORCID sign-in + researcher identity. Environment: $env"
+        echo "orcid.application-client-id = $client_id"
+        echo "orcid.application-client-secret = $client_secret"
+        echo "orcid.domain-url = $domain"
+        echo "orcid.api-url = $api"
+        echo "orcid.public-url = $public"
+        echo "orcid.synchronization-enabled = true"
+        echo "plugin.sequence.org.dspace.authenticate.AuthenticationMethod = org.dspace.authenticate.PasswordAuthentication, org.dspace.authenticate.OrcidAuthentication"
+        echo "$ORCID_MARK_END"
+    } >> "$cfg"
+
+    echo ""
+    info "ORCID ($env) configured for '$DEPLOY_NAME'."
+    echo ""
+    echo "  ➜ Register this EXACT redirect URI in your ORCID app"
+    echo "    (ORCID → Developer Tools → your application → Redirect URIs):"
+    echo ""
+    echo "        $redirect"
+    echo ""
+    echo "    Client ID : $client_id"
+    echo "    Secret    : stored in $cfg"
+    echo ""
+    if [ "$restart" = 1 ]; then
+        if container_running dspace; then
+            info "Restarting the backend to apply (first boot after a config change can take a few minutes)..."
+            pcompose restart dspace
+            echo ""
+            info "Done. Users will see 'Sign in with ORCID' at http://$(plugin_server_ip):$(ui_port)"
+        else
+            warn "Backend not running — start it to apply: chengetai start $DEPLOY_NAME"
+        fi
+    else
+        info "Config written. Apply with: chengetai restart $DEPLOY_NAME"
+    fi
+}
+
 # Copy this deployment's branding over the engine's assets. The engine's
 # own copies are reset from git first so upstream updates never conflict
 # with local branding.

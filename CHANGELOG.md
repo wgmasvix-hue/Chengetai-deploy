@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.19.0
+
+- **ORCID integration: `chengetai orcid`.** Turn a deployed repository into part
+  of the global research ecosystem — researchers can **sign in with ORCID** and
+  link their ORCID iD. ORCID is DSpace-native, so this configures it against the
+  already-running backend with no redeploy: it writes a single managed block
+  into the deployment's `local.cfg` (the only config the campus stack
+  bind-mounts), adds `OrcidAuthentication` to the login stack (password login
+  stays on), restarts the backend, and prints the exact redirect URI to register
+  in your ORCID app. `--sandbox` (default) / `--production`, `--status`,
+  `--disable`, and `--no-restart` are supported; the client secret can be passed
+  as `--client-secret` or via `ORCID_CLIENT_SECRET` to keep it out of shell
+  history. Re-running is idempotent (the managed block is replaced in place).
+  Docs in `docs/ORCID.md`. First of the planned research-ecosystem integrations
+  (Crossref, DataCite, OpenAlex, OpenAIRE, Sherpa Romeo, ROR to follow).
+
 ## 2.18.1
 
 - **Fix: installer no longer aborts when nginx isn't already running.** On some

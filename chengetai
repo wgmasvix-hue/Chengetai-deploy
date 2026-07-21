@@ -35,6 +35,7 @@ Usage:
  chengetai restore [name] [dir]       Restore a backup
  chengetai edit <component> [name]    Edit logo, favicon, config or communities
  chengetai admin [name]               Create or reset the administrator account
+ chengetai orcid [name] <opts>        Enable "Sign in with ORCID" + researcher identity (DSpace)
  chengetai domain [name] <domain>     Put the deployment behind a domain + automatic HTTPS (Caddy)
  chengetai manager [name]             Launch a local web UI to manage this deployment
  chengetai update                     Update ChengetAi Deploy and its deployments
@@ -55,7 +56,7 @@ CMD="${1:-}"
 
 case "$CMD" in
 
-install|doctor|create|deploy|generate|upgrade|start|stop|restart|status|verify|logs|backup|restore|edit|admin|domain|manager|update|remove|enroll|agent)
+install|doctor|create|deploy|generate|upgrade|start|stop|restart|status|verify|logs|backup|restore|edit|admin|orcid|domain|manager|update|remove|enroll|agent)
     exec bash "$CHENGETAI_HOME/lib/$CMD.sh" "$@"
     ;;
 
