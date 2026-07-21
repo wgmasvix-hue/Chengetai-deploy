@@ -190,7 +190,13 @@ plugin_brand() {
     : "${INSTITUTION_NAME:=${REPOSITORY_NAME:-Institutional Repository}}"
     : "${REPOSITORY_NAME:=$INSTITUTION_NAME}"
     if [ -z "${SHORT_NAME:-}" ]; then
-        SHORT_NAME="$(printf '%s' "$INSTITUTION_NAME" | awk '{for(i=1;i<=NF;i++) printf toupper(substr($i,1,1))}')"
+        # Multi-word names → initials (Digital Archive Research Exchange → DARE);
+        # a single word is kept whole (DARE → DARE, not "D").
+        if [ "$(printf '%s' "$INSTITUTION_NAME" | wc -w)" -le 1 ]; then
+            SHORT_NAME="$INSTITUTION_NAME"
+        else
+            SHORT_NAME="$(printf '%s' "$INSTITUTION_NAME" | awk '{for(i=1;i<=NF;i++) printf toupper(substr($i,1,1))}')"
+        fi
     fi
     : "${PUBLISHER:=$INSTITUTION_NAME}"
 

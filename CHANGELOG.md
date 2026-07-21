@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.20.1
+
+- **Fix: `chengetai brand` short-name default for single-word institutions.** A
+  one-word institution name (e.g. "DARE") produced a single-letter short name
+  ("D") from the initials logic. Single-word names are now kept whole (DARE →
+  DARE); multi-word names still become initials (Digital Archive Research
+  Exchange → DARE). Override any time with `--shortname`.
+
 ## 2.20.0
 
 - **Institutional branding: `chengetai brand`.** Make a deployed repository
