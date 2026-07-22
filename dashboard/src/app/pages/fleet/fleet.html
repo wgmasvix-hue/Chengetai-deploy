@@ -1,0 +1,124 @@
+<div class="head">
+  <h1>🛰 Fleet</h1>
+  <button *ngIf="canOperate" (click)="showTokenForm.set(!showTokenForm()); issuedToken.set('')">
+    {{ showTokenForm() ? 'Cancel' : '+ Enroll a Server' }}
+  </button>
+</div>
+
+<p class="hint">
+  Every ChengetAi-managed server reports here. Queue lifecycle commands remotely,
+  and use the kill switch to suspend a server that should no longer operate —
+  data is always preserved.
+</p>
+
+<form class="form" *ngIf="showTokenForm()" (ngSubmit)="issueToken()">
+  <input placeholder="Label (e.g. Bulawayo Poly)" name="label" [(ngModel)]="tokenDraft.label" />
+  <select name="ttl" [(ngModel)]="tokenDraft.ttlMinutes">
+    <option [ngValue]="60">Valid 1 hour</option>
+    <option [ngValue]="1440">Valid 24 hours</option>
+    <option [ngValue]="10080">Valid 7 days</option>
+  </select>
+  <button type="submit">Issue Enrollment Token</button>
+</form>
+
+<div class="token-reveal" *ngIf="issuedToken()">
+  <p><b>Run this on the new server</b> — the token is shown only once:</p>
+  <code>{{ enrollCommand() }}</code>
+  <button (click)="copyEnroll()">Copy</button>
+</div>
+
+<p class="error" *ngIf="error()">{{ error() }}</p>
+<p class="notice" *ngIf="notice()">{{ notice() }}</p>
+
+<table class="tbl" *ngIf="agents().length; else empty">
+  <thead>
+    <tr>
+      <th>Server</th><th>Address</th><th>Version</th><th>Deployments</th>
+      <th>Heartbeat</th><th>Status</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <ng-container *ngFor="let a of agents()">
+      <tr class="row" (click)="toggleAgent(a)">
+        <td class="name">{{ a.name }}<small *ngIf="a.hostname"> · {{ a.hostname }}</small></td>
+        <td>{{ a.publicIp || '—' }}</td>
+        <td>{{ a.version || '—' }}</td>
+        <td>
+          <span *ngIf="deployments(a).length; else none">
+            <span class="dep" *ngFor="let d of deployments(a)"
+                  [class.down]="d.running === false">{{ d.name }}</span>
+          </span>
+          <ng-template #none>—</ng-template>
+        </td>
+        <td [class.stale]="a.connectivity === 'offline'">{{ ago(a.lastHeartbeat) }}</td>
+        <td>
+          <span class="badge" [class.ok]="a.license === 'active' && a.connectivity === 'online'"
+                [class.warn]="a.license === 'active' && a.connectivity === 'offline'"
+                [class.bad]="a.license === 'revoked'">
+            {{ a.license === 'revoked' ? 'revoked' : a.connectivity }}
+          </span>
+        </td>
+        <td class="actions" (click)="$event.stopPropagation()">
+          <button *ngIf="isAdmin && a.license === 'active'" class="danger" (click)="revoke(a)">Kill&nbsp;Switch</button>
+          <button *ngIf="isAdmin && a.license === 'revoked'" (click)="reactivate(a)">Reactivate</button>
+          <button *ngIf="isAdmin" class="ghost" (click)="deregister(a)">Remove</button>
+        </td>
+      </tr>
+
+      <tr class="detail" *ngIf="openAgent() === a.id">
+        <td colspan="7">
+          <div class="console" *ngIf="canOperate && a.license === 'active'">
+            <select name="cmd" [(ngModel)]="cmdDraft.command">
+              <option *ngFor="let c of commandChoices" [value]="c">{{ c }}</option>
+            </select>
+            <input placeholder="Deployment (optional)" name="target" [(ngModel)]="cmdDraft.target" />
+            <button (click)="sendCommand(a)">Queue Command</button>
+            <small>Delivered on the agent's next heartbeat (~60s).</small>
+          </div>
+
+          <table class="history" *ngIf="commands().length; else noCmds">
+            <thead><tr><th>Command</th><th>By</th><th>Queued</th><th>Status</th><th>Output</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let c of commands()">
+                <td><code>{{ c.command }} {{ (c.args || []).join(' ') }}</code></td>
+                <td>{{ c.createdBy || '—' }}</td>
+                <td>{{ ago(c.createdAt) }}</td>
+                <td>
+                  <span class="badge" [class.ok]="c.status === 'done'"
+                        [class.warn]="c.status === 'pending' || c.status === 'sent'"
+                        [class.bad]="c.status === 'failed'">{{ c.status }}</span>
+                </td>
+                <td class="out"><pre *ngIf="c.output">{{ c.output }}</pre><span *ngIf="!c.output">—</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <ng-template #noCmds><p class="hint">No commands sent to this server yet.</p></ng-template>
+        </td>
+      </tr>
+    </ng-container>
+  </tbody>
+</table>
+
+<ng-template #empty>
+  <div class="empty">
+    <p>No servers are enrolled yet.</p>
+    <p class="hint">Issue an enrollment token above, then run the printed
+      <code>chengetai enroll</code> command on the server you want to manage.</p>
+  </div>
+</ng-template>
+
+<h2 *ngIf="canOperate && tokens().length">Enrollment tokens</h2>
+<table class="tbl" *ngIf="canOperate && tokens().length">
+  <thead><tr><th>Label</th><th>Issued by</th><th>Expires</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr *ngFor="let t of tokens()">
+      <td>{{ t.label || '—' }}</td>
+      <td>{{ t.createdBy || '—' }}</td>
+      <td>{{ t.expiresAt | date: 'medium' }}</td>
+      <td>
+        <span class="badge" [class.ok]="t.status === 'active'"
+              [class.warn]="t.status === 'used'" [class.bad]="t.status === 'expired'">{{ t.status }}</span>
+      </td>
+    </tr>
+  </tbody>
+</table>

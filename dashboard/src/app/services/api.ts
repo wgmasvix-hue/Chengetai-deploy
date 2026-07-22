@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { resolveApiUrl } from './runtime-config';
 import {
   DashboardStats, ServerInfo, Deployment, Plugin, Job, User, NewDeploymentRequest,
+  FleetAgent, FleetCommand, EnrollmentToken, IssuedToken,
 } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -61,5 +62,27 @@ export class ApiService {
   // ── Account ──
   changePassword(currentPassword: string, newPassword: string) {
     return this.http.post<{ ok: boolean }>(`${this.apiUrl}/auth/change-password`, { currentPassword, newPassword });
+  }
+
+  // ── Fleet (managed servers) ──
+  getFleetAgents() { return this.http.get<FleetAgent[]>(`${this.apiUrl}/fleet/agents`); }
+  getFleetCommands(agentId: string) {
+    return this.http.get<FleetCommand[]>(`${this.apiUrl}/fleet/agents/${agentId}/commands`);
+  }
+  queueFleetCommand(agentId: string, command: string, args: string[]) {
+    return this.http.post<FleetCommand>(`${this.apiUrl}/fleet/agents/${agentId}/commands`, { command, args });
+  }
+  revokeFleetAgent(agentId: string) {
+    return this.http.post<FleetAgent>(`${this.apiUrl}/fleet/agents/${agentId}/revoke`, {});
+  }
+  reactivateFleetAgent(agentId: string) {
+    return this.http.post<FleetAgent>(`${this.apiUrl}/fleet/agents/${agentId}/reactivate`, {});
+  }
+  deregisterFleetAgent(agentId: string) {
+    return this.http.delete<void>(`${this.apiUrl}/fleet/agents/${agentId}`);
+  }
+  getEnrollmentTokens() { return this.http.get<EnrollmentToken[]>(`${this.apiUrl}/fleet/enrollment-tokens`); }
+  issueEnrollmentToken(body: { label?: string; ttlMinutes?: number; singleUse?: boolean }) {
+    return this.http.post<IssuedToken>(`${this.apiUrl}/fleet/enrollment-tokens`, body);
   }
 }

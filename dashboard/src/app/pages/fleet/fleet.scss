@@ -1,0 +1,54 @@
+.head { display: flex; justify-content: space-between; align-items: center; }
+h1, h2 { color: #e2e8f0; }
+h2 { margin-top: 2rem; font-size: 1.05rem; }
+button { padding: .5rem .9rem; border: 0; border-radius: 8px; background: #3b82f6; color: #fff; cursor: pointer; }
+button.danger { background: #dc2626; }
+button.ghost { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+.hint { color: #94a3b8; font-size: .9rem; max-width: 60ch; }
+.error { color: #f87171; }
+.notice { color: #4ade80; }
+
+.form { display: flex; gap: .5rem; margin: 1rem 0; flex-wrap: wrap; }
+.form input, .form select,
+.console input, .console select {
+  padding: .6rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0;
+}
+
+.token-reveal {
+  background: #0f172a; border: 1px solid #334155; border-left: 3px solid #3b82f6;
+  border-radius: 10px; padding: .9rem 1rem; margin: 1rem 0;
+  p { margin: 0 0 .5rem; color: #e2e8f0; }
+  code { display: block; word-break: break-all; color: #93c5fd; margin-bottom: .6rem; }
+}
+
+.tbl { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.tbl th, .tbl td { text-align: left; padding: .7rem; border-bottom: 1px solid #1e293b; color: #e2e8f0; }
+.tbl tr.row { cursor: pointer; }
+.tbl tr.row:hover td { background: #101a2e; }
+.name small { color: #64748b; }
+.stale { color: #f59e0b; }
+.actions { white-space: nowrap; display: flex; gap: .4rem; }
+
+.badge {
+  padding: .15rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 600;
+  background: #334155; color: #cbd5e1;
+  &.ok   { background: rgba(74, 222, 128, .15); color: #4ade80; }
+  &.warn { background: rgba(245, 158, 11, .15); color: #f59e0b; }
+  &.bad  { background: rgba(220, 38, 38, .18); color: #f87171; }
+}
+
+.dep {
+  display: inline-block; margin: 0 .3rem .2rem 0; padding: .1rem .5rem;
+  border-radius: 6px; background: #1e293b; font-size: .8rem;
+  &.down { color: #f87171; text-decoration: line-through; }
+}
+
+tr.detail td { background: #0b1322; }
+.console { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-bottom: .8rem;
+  small { color: #64748b; } }
+.history { width: 100%; border-collapse: collapse;
+  th, td { padding: .45rem .6rem; border-bottom: 1px solid #16213a; font-size: .86rem; }
+  .out pre { margin: 0; max-height: 8rem; overflow: auto; white-space: pre-wrap; color: #94a3b8; } }
+
+.empty { text-align: center; padding: 2.5rem 0; color: #94a3b8;
+  code { color: #93c5fd; } }
