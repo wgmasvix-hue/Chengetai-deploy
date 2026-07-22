@@ -6,6 +6,7 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { Deployments } from './pages/deployments/deployments';
 import { NewDeployment } from './pages/new-deployment/new-deployment';
 import { Server } from './pages/server/server';
+import { Fleet } from './pages/fleet/fleet';
 import { Backups } from './pages/backups/backups';
 import { Settings } from './pages/settings/settings';
 import { Users } from './pages/users/users';
@@ -22,6 +23,7 @@ export const routes: Routes = [
       { path: 'deployments', component: Deployments },
       { path: 'new-deployment', component: NewDeployment },
       { path: 'server', component: Server },
+      { path: 'fleet', component: Fleet },
       { path: 'backups', component: Backups },
       { path: 'users', component: Users },
       { path: 'settings', component: Settings },

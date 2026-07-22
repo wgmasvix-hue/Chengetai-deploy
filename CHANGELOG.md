@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.22.0
+
+- **Fleet page in the dashboard.** The Model A control plane finally has a UI —
+  until now the fleet was CLI/API-only. The new **🛰 Fleet** page shows every
+  enrolled server live (name, address, CLI version, its deployments with
+  running/stopped state, last heartbeat, online/offline/revoked badge,
+  auto-refresh every 30s). From it you can: **queue remote commands**
+  (status/start/stop/restart/update/backup, optional target deployment —
+  delivered on the agent's next heartbeat) with per-agent command history and
+  output; hit the **kill switch** (revoke — stops the server's deployments,
+  data preserved) and **reactivate**; and **enroll new servers** — issue an
+  enrollment token (label + TTL) and copy the exact one-line
+  `chengetai enroll ... --control-plane <this dashboard>` command, with the
+  plaintext token shown exactly once. Admin-only controls follow the API's
+  RBAC. Added to the sidebar and mobile nav.
+
 ## 2.21.0
 
 - **Institution colours: `chengetai brand --primary/--accent` (Phase 1b).**

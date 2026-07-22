@@ -85,3 +85,51 @@ export interface NewDeploymentRequest {
   uiPort?: number;
   restPort?: number;
 }
+
+// ── Fleet (managed servers) ──
+export interface FleetAgent {
+  id: string;
+  name: string;
+  hostname: string | null;
+  publicIp: string | null;
+  platform?: string | null;
+  version: string | null;
+  license: 'active' | 'revoked';
+  connectivity: 'online' | 'offline';
+  enrolledAt?: string;
+  lastHeartbeat: string | null;
+  lastStatus?: {
+    health?: string | null;
+    deployments?: { name: string; platform?: string; running?: boolean }[] | null;
+    at?: string;
+  } | null;
+  revokedAt?: string | null;
+}
+
+export interface FleetCommand {
+  id: string;
+  command: string;
+  args?: string[];
+  status: 'pending' | 'sent' | 'done' | 'failed';
+  createdBy?: string | null;
+  createdAt?: string;
+  sentAt?: string | null;
+  completedAt?: string | null;
+  output?: string | null;
+}
+
+export interface EnrollmentToken {
+  id: string;
+  label: string;
+  singleUse: boolean;
+  status: 'active' | 'used' | 'expired';
+  createdBy?: string | null;
+  createdAt: string;
+  expiresAt: string;
+  usedAt?: string | null;
+}
+
+export interface IssuedToken {
+  token: string;
+  record: EnrollmentToken;
+}
