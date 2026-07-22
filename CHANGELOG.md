@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.21.0
+
+- **Institution colours: `chengetai brand --primary/--accent` (Phase 1b).**
+  Generates a palette stylesheet (`branding/theme.css`) that the engine injects
+  into the DSpace UI **after the compiled styles** and bind-mounts at runtime —
+  re-colouring the header, navbar, footer, buttons, links, badges and focus
+  states with derived shades via CSS `color-mix()`. Colour-only changes apply on
+  a frontend restart (no Angular recompile); `--apply` also rebuilds the image
+  so the theme ships inside it. Hex values are validated; the palette persists
+  in `brand.env` and merges on re-run. The reference engine gained the matching
+  hook (empty-by-default `assets/theme.css`, injected in `Dockerfile.angular`,
+  mounted in the campus stack). A ready-made **DARE identity** (emerald
+  `#0E5C4A` + gold `#C8A24B`, serif-D monogram logo + favicon, SVG sources) is
+  included in `examples/branding/dare/`.
+
 ## 2.20.1
 
 - **Fix: `chengetai brand` short-name default for single-word institutions.** A

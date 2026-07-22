@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="80" viewBox="0 0 320 80">
+  <rect x="6" y="10" width="60" height="60" rx="15" fill="#0E5C4A"/>
+  <text x="36" y="42" font-family="Georgia,'Times New Roman',serif" font-size="42"
+        font-weight="700" fill="#C8A24B" text-anchor="middle" dominant-baseline="central">D</text>
+  <rect x="20" y="58" width="32" height="4" rx="2" fill="#C8A24B"/>
+  <text x="80" y="38" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="34"
+        font-weight="700" fill="#0E5C4A" dominant-baseline="central" letter-spacing="1.5">DARE</text>
+  <text x="82" y="62" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5"
+        font-weight="600" fill="#7A6A2E" letter-spacing="3.2">DIGITAL REPOSITORY</text>
+</svg>

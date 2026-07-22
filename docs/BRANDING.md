@@ -53,19 +53,36 @@ chengetai brand dare --status     # show the current branding profile
 - **Logo**: PNG, ~320×80 works well for the navbar.
 - **Favicon**: PNG (DSpace serves the bytes at `/favicon.ico`).
 
-## What is NOT yet covered (Phase 1b)
+## Institution colours
 
-Colours, the footer, the login screen and error pages are **compiled into the
-DSpace Angular frontend image**, so changing them needs a *themed source build*
-of `dspace-angular` (a custom `src/themes/<institution>/` with `_theme.scss` and
-component overrides), not just an asset swap. That's the next branding phase.
-Until then, `chengetai brand` covers the institution's **name, identity, logo,
-favicon and browser title** — enough that the repository already reads as the
-institution's, not DSpace's.
+```bash
+chengetai brand dare --primary '#0E5C4A' --accent '#C8A24B' --apply
+```
+
+`--primary` (required for theming) and `--accent` generate a palette stylesheet
+into `deployments/<name>/branding/theme.css`. The engine **injects it into the
+UI after the compiled styles and bind-mounts it at runtime**, so it re-colours
+the header, navbar, footer, buttons, links, badges and focus states — with
+derived shades computed by CSS `color-mix()` (no colour math in shell). A
+frontend restart applies colour-only changes; `--apply` also rebuilds the image
+so the theme ships inside it.
+
+A ready-made identity for DARE (emerald `#0E5C4A` + gold `#C8A24B`, serif-D
+monogram logo + favicon) lives in `examples/branding/dare/`.
+
+## What is NOT yet covered (Phase 1c)
+
+Custom footer *content*, the login-page layout and error-page copy are
+**compiled into the DSpace Angular frontend**, so changing their structure
+needs a *themed source build* of `dspace-angular` (a custom
+`src/themes/<institution>/`), not just an asset/CSS overlay. The colour theme
+above already re-skins them; only their content/layout remains build-bound.
 
 ## Roadmap
 
 - **Phase 1a (done):** name, short name, publisher, preview brand, browser
   title, logo, favicon — driven from a per-deployment brand profile.
-- **Phase 1b:** institution colour palette, custom footer, branded login and
-  error pages via a themed Angular build.
+- **Phase 1b (done):** institution colour palette via an injected + runtime-
+  mounted theme stylesheet (`--primary` / `--accent`).
+- **Phase 1c:** custom footer content, login and error-page layout via a themed
+  Angular source build.
