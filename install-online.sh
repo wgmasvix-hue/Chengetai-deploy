@@ -63,5 +63,5 @@ git fetch --depth 1 origin "$BRANCH"
 git checkout -qf -B "$BRANCH" FETCH_HEAD
 say "Code ready."
 
-# 3. Hand off to the platform bootstrap (node, nginx, API, dashboard) ---------
+# 3. Hand off to the platform bootstrap (node, Caddy, API, dashboard) --------
 exec bash "$DEST/deploy/bootstrap.sh" "$@"

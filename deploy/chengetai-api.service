@@ -15,7 +15,7 @@ Restart=on-failure
 RestartSec=5
 # Configuration lives in /opt/chengetai-deploy/api/.env (chmod 600).
 EnvironmentFile=-/opt/chengetai-deploy/api/.env
-# Bind to localhost only; expose through the reverse proxy (see nginx.conf).
+# Bind to localhost only; expose through the reverse proxy (see Caddyfile).
 Environment=PORT=3000
 # Hardening
 NoNewPrivileges=true

@@ -36,12 +36,22 @@ npm ci && npm run build         # emits dist/chengetai-dashboard/browser
 
 ## 4. Reverse proxy + TLS
 
+Caddy — the same reverse proxy `chengetai domain` uses for repository
+domains, so the dashboard and every repository share one Caddy instance and
+never fight over port 80:
+
 ```bash
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/chengetai
-sudo ln -s /etc/nginx/sites-available/chengetai /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d chengetai.<your-domain>   # if internet-facing over VPN
+sudo bash deploy/install-caddy.sh
+sudo mkdir -p /etc/caddy/conf.d
+echo 'import /etc/caddy/conf.d/*.caddy' | sudo tee -a /etc/caddy/Caddyfile >/dev/null
+sudo cp deploy/Caddyfile /etc/caddy/conf.d/_dashboard.caddy
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl enable --now caddy
 ```
+
+For HTTPS on a real domain, run `chengetai domain <name> chengetai.<your-domain>`
+once a deployment exists — it provisions Caddy's automatic Let's Encrypt
+certificate for you, no certbot needed.
 
 Dashboard and API now share one origin (no CORS); only the proxy port is
 exposed. Firewall the rest:

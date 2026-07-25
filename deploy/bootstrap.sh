@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  ChengetAi Deploy — one-shot platform bootstrap (internal use).
-#  Installs the CLI, API and dashboard, wires nginx + systemd, prints login.
+#  Installs the CLI, API and dashboard, wires Caddy + systemd, prints login.
 #
 #  Run from a clone, as root, on Ubuntu 22.04/24.04:
 #    sudo bash deploy/bootstrap.sh
@@ -21,11 +21,14 @@ SRC="$(cd "$(dirname "$0")/.." && pwd)"
 DEST=/opt/chengetai-deploy
 
 # 1. Dependencies -------------------------------------------------------------
-say "Installing dependencies (node, nginx, git)..."
+# Caddy is also what `chengetai domain` uses for per-repository HTTPS, so the
+# dashboard and every repository domain share one Caddy instance — no nginx,
+# no port-80 conflict between the two.
+say "Installing dependencies (node, Caddy, git)..."
 apt-get update -qq
-command -v node  >/dev/null || { curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null; apt-get install -y nodejs >/dev/null; }
-command -v nginx >/dev/null || apt-get install -y nginx >/dev/null
-command -v git   >/dev/null || apt-get install -y git >/dev/null
+command -v node >/dev/null || { curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null; apt-get install -y nodejs >/dev/null; }
+command -v git  >/dev/null || apt-get install -y git >/dev/null
+bash "$SRC/deploy/install-caddy.sh"
 
 # 2. Copy into place ----------------------------------------------------------
 say "Installing to $DEST..."
@@ -55,29 +58,36 @@ say "Building dashboard (~1 min)..."
 cd "$DEST/dashboard"
 npm install --no-audit --no-fund >/dev/null
 npm run build >/dev/null
-# Serve the dashboard and API on the same origin via nginx: the browser
-# calls a relative /api, which nginx proxies to the localhost API. No
+# Serve the dashboard and API on the same origin via Caddy: the browser
+# calls a relative /api, which Caddy proxies to the localhost API. No
 # exposed :3000 port and no CORS to configure.
 DIST="$DEST/dashboard/dist/chengetai-dashboard/browser"
 cat > "$DIST/config.js" <<'CFG'
 window.__CHENGETAI_CONFIG__ = { apiUrl: "/api" };
 CFG
 
-# 5. Nginx --------------------------------------------------------------------
-say "Configuring nginx..."
-cp "$DEST/deploy/nginx.conf" /etc/nginx/sites-available/chengetai
-ln -sf /etc/nginx/sites-available/chengetai /etc/nginx/sites-enabled/chengetai
-rm -f /etc/nginx/sites-enabled/default
-# Start (not just reload) nginx: on some minimal images the package install
-# does not leave the service running, so a plain `reload` fails. None of this
-# must abort the install (we are under `set -e`), so every step is guarded.
-if nginx -t >/dev/null 2>&1; then
-  systemctl enable nginx >/dev/null 2>&1 || true
-  systemctl reload nginx >/dev/null 2>&1 \
-    || systemctl restart nginx >/dev/null 2>&1 \
-    || warn "nginx is installed but could not be started — run: systemctl enable --now nginx"
+# 5. Caddy ----------------------------------------------------------------
+say "Configuring Caddy..."
+mkdir -p /etc/caddy/conf.d
+[ -f /etc/caddy/Caddyfile ] || echo "# Managed by ChengetAi Deploy" > /etc/caddy/Caddyfile
+if ! grep -q 'import /etc/caddy/conf.d/\*' /etc/caddy/Caddyfile; then
+  echo 'import /etc/caddy/conf.d/*.caddy' >> /etc/caddy/Caddyfile
+fi
+# Leading underscore keeps this filename ahead of, and never colliding with,
+# any repository's <name>.caddy from `chengetai domain` (deployment names
+# can't start with an underscore).
+cp "$DEST/deploy/Caddyfile" /etc/caddy/conf.d/_dashboard.caddy
+# None of this must abort the install (we are under `set -e`), so every step
+# is guarded; enable + start (not just reload) since a fresh package install
+# does not always leave the service running.
+if caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1; then
+  systemctl enable caddy >/dev/null 2>&1 || true
+  systemctl reload caddy 2>/dev/null \
+    || systemctl restart caddy >/dev/null 2>&1 \
+    || warn "Caddy is installed but could not be started — run: systemctl enable --now caddy"
 else
-  warn "nginx config test failed — skipping reload. Check /etc/nginx/sites-available/chengetai"
+  caddy validate --config /etc/caddy/Caddyfile || true
+  warn "Caddy config failed validation (see above) — skipping reload."
 fi
 
 # 6. Optional: deploy DSpace straight away ------------------------------------

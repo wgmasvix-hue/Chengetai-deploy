@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.23.0
+
+- **Dashboard now served by Caddy, not nginx.** `chengetai domain` already
+  installs Caddy (host-level, systemd) for per-repository HTTPS — running
+  nginx alongside it for the dashboard meant two reverse proxies fighting over
+  port 80, and nginx would lose (`nginx.service is not active, cannot
+  reload`) whenever Caddy already held the port. The dashboard + API now run
+  behind the **same Caddy instance**: `deploy/bootstrap.sh` writes
+  `/etc/caddy/conf.d/_dashboard.caddy` (a `:80` catch-all site that proxies
+  `/api/*` to the local API and serves the built Angular dashboard with SPA
+  fallback) alongside whatever per-repository sites `chengetai domain` adds
+  to the same `conf.d/` — one proxy, one port, no conflict. `lib/domain.sh`
+  now shares `deploy/install-caddy.sh` with bootstrap instead of duplicating
+  the install recipe. `deploy/nginx.conf` is removed. Config verified against
+  a real Caddy v2.9.1 binary: `caddy validate` passes with both the dashboard
+  and a repository site loaded together, and a live run confirms `/api/*`
+  proxies with the exact path the API expects, static assets serve, and
+  client-side (Angular) routes correctly fall back to `index.html` instead of
+  404ing.
+
 ## 2.22.0
 
 - **Fleet page in the dashboard.** The Model A control plane finally has a UI —

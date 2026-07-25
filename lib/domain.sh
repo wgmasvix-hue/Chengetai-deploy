@@ -49,15 +49,10 @@ install_caddy() {
         return 0
     fi
     info "Installing Caddy..."
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update -y >/dev/null
-    apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl gnupg >/dev/null
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-        | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
-        > /etc/apt/sources.list.d/caddy-stable.list
-    apt-get update -y >/dev/null
-    apt-get install -y caddy >/dev/null
+    # Shared with deploy/bootstrap.sh (the dashboard's own reverse proxy) so
+    # there is exactly one install recipe for the one Caddy instance that
+    # serves both the dashboard and every repository domain.
+    bash "$CHENGETAI_HOME/deploy/install-caddy.sh"
     info "Caddy installed."
 }
 
