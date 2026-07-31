@@ -15,7 +15,7 @@ Bash CLI + plugin engine. See `docs/ARCHITECTURE.md` for the full design,
 
 **Deploying DSpace?** Follow `docs/DEPLOY-DSPACE.md` — the exact,
 field-tested flow from a fresh server to a live site, including custom
-domain + HTTPS with nginx.
+domain + HTTPS with Caddy.
 
 **Managed deployments?** `docs/FLEET.md` describes the fleet control plane —
 enrol servers, drive them remotely, and disable any deployment centrally
@@ -35,7 +35,7 @@ Add a DSpace repository in the same run:
 curl -fsSL https://raw.githubusercontent.com/wgmasvix-hue/Chengetai-deploy/main/install-online.sh | sudo bash -s -- --with-dspace
 ```
 
-It installs the CLI, API and dashboard, wires nginx, and prints your
+It installs the CLI, API and dashboard, wires Caddy, and prints your
 dashboard URL and admin login. **Safe to re-run** — it updates in place
 and never touches your existing deployments or admin password. If an SSH
 drop interrupts it, run the same command again and it resumes. (Tip: run
@@ -147,7 +147,7 @@ chengetai            CLI entry point (dispatcher)
 VERSION              Current version
 install-online.sh    one-command installer (curl | sudo bash)
 install-cli.sh       CLI-only installer (run from a clone)
-deploy/              bootstrap.sh, systemd unit, nginx recipe
+deploy/              bootstrap.sh, systemd unit, Caddy recipe
 lib/                 One script per command + utils.sh helpers
 templates/           Platform plugins (plugin.sh + plugin.json);
                      templates/dspace/branding/ holds the default assets

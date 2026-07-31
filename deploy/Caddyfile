@@ -1,0 +1,36 @@
+# ChengetAi Deploy — dashboard + API reverse proxy (Caddy).
+# Serves the built dashboard and proxies /api to the local API service on one
+# origin, so the browser makes same-origin requests (no CORS) and only Caddy
+# is exposed. Installed automatically by deploy/bootstrap.sh as
+# /etc/caddy/conf.d/_dashboard.caddy, imported by the main /etc/caddy/Caddyfile
+# alongside any per-repository sites `chengetai domain` adds — one Caddy
+# instance serves everything, so there is no port-80 conflict.
+#
+#   sudo cp deploy/Caddyfile /etc/caddy/conf.d/_dashboard.caddy
+#   sudo caddy validate --config /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+#
+# This ":80" block only answers requests whose Host header doesn't match a
+# more specific site (e.g. a repository's own domain), so it safely coexists
+# as the catch-all for the bare server IP.
+:80 {
+    encode gzip
+
+    # `handle` blocks at the same level are mutually exclusive (first match
+    # wins), matching nginx's location /api/ { } vs location / { } split.
+
+    # API — proxied to the localhost-bound service. Caddy's reverse_proxy has
+    # no aggressive default response timeout (unlike nginx's 60s), so
+    # multi-minute deploy jobs need no extra tuning here.
+    handle /api/* {
+        reverse_proxy 127.0.0.1:3000
+    }
+
+    # Built Angular dashboard (npm run build in dashboard/), with the SPA
+    # fallback so client-side routes resolve to index.html.
+    handle {
+        root * /opt/chengetai-deploy/dashboard/dist/chengetai-dashboard/browser
+        try_files {path} /index.html
+        file_server
+    }
+}
