@@ -3,7 +3,7 @@
 One Command. Complete Deployment.
 
 ChengetAi Deploy is an **orchestration platform** for deploying and
-operating institutional platforms — starting with **DSpace 8** — on any
+operating institutional platforms — starting with **DSpace 10** — on any
 Ubuntu server. It clones, configures, brands, deploys, verifies, monitors
 and maintains canonical open-source repositories (DSpace via the Bulawayo
 Polytechnic reference repository); it never reimplements the deployment
@@ -129,7 +129,7 @@ new platforms can be added without touching the CLI itself.
 
 | Platform | Status |
 |---|---|
-| `dspace` | Available — DSpace 8 institutional repository |
+| `dspace` | Available — DSpace 10 institutional repository |
 | `koha` | Available — Koha library management system |
 | `moodle` | Available — Moodle learning management system |
 | `ojs` | Available — Open Journal Systems (scholarly publishing) |

@@ -1,6 +1,6 @@
 # Deploying DSpace with ChengetAi Deploy
 
-The exact, field-tested flow for standing up DSpace 8 on a fresh Ubuntu
+The exact, field-tested flow for standing up DSpace 10 on a fresh Ubuntu
 server — the path validated in production. Two parts:
 
 1. [Deploy DSpace](#part-1--deploy-dspace) — get it running on an IP.
@@ -112,7 +112,7 @@ The deployment name can be omitted whenever only one deployment exists.
 Serve DSpace on a real domain with TLS — e.g.
 `https://unifiedrepo.chengerailabs.co.zw` — instead of `:4000`.
 
-### Automated (recommended) — `chengetai domain`
+### `chengetai domain` (the only supported path)
 
 One command sets up **Caddy** (automatic Let's Encrypt HTTPS), reverse-proxies
 the UI and REST under one domain, and repoints DSpace at the HTTPS URL:
@@ -123,139 +123,42 @@ sudo chengetai domain <name> your-domain.example --email you@example
 ```
 
 It installs Caddy if needed, writes the site to `/etc/caddy/conf.d/<name>.caddy`,
-reloads Caddy, rewrites the frontend `config.yml` and the backend public URL
-(backups kept as `.bak`), and rebuilds/restarts the stack. Watch certificate
-issuance with `journalctl -u caddy -f`. That's it — skip the manual steps below.
-
-The rest of this section documents the equivalent **manual nginx + certbot**
-setup if you prefer to run it by hand. Replace `unifiedrepo.chengerailabs.co.zw`
-with your domain throughout, and `<name>` with your deployment name.
-
-### 1. Point DNS at the server
-
-Create an **A record** for your domain → the server's **public** IP:
-
-```
-unifiedrepo.chengerailabs.co.zw.   A   <server-public-ip>
-```
-
-Wait for it to resolve (`dig +short unifiedrepo.chengerailabs.co.zw`).
-
-### 2. Tell DSpace its public URL
-
-**Backend** — edit the deployment's engine compose file and set the public
-HTTPS URLs:
+reloads Caddy, and repoints the deployment (`plugin_domain`): it rewrites
+`DSPACE_HOSTNAME`, `DSPACE_UI_URL` and `DSPACE_REST_URL` in the deployment's
+`deployments/<name>/engine/.env` to `https://your-domain.example`, then
+recreates the stack so the DSpace backend and Angular SSR both advertise (and
+CORS-allow) the new HTTPS origin. Watch certificate issuance with
+`journalctl -u caddy -f`.
 
 ```bash
-nano /opt/chengetai-deploy/deployments/<name>/engine/docker-compose.yml
+chengetai domain <name> your-domain.example --caddy-only   # proxy only, skip the repoint
 ```
 
-Change the `dspace` service environment to:
-
-```yaml
-      dspace__P__server__P__url: https://unifiedrepo.chengerailabs.co.zw/server
-      dspace__P__ui__P__url: https://unifiedrepo.chengerailabs.co.zw
-```
-
-**Frontend** — point the browser-side REST config at the domain over TLS:
+If you need to repoint it by hand instead (e.g. a proxy Caddy doesn't manage),
+edit those same three variables directly and recreate:
 
 ```bash
-chengetai edit config <name>
+nano /opt/chengetai-deploy/deployments/<name>/engine/.env
+#   DSPACE_HOSTNAME=your-domain.example
+#   DSPACE_UI_URL=https://your-domain.example
+#   DSPACE_REST_URL=https://your-domain.example/server
+chengetai start <name>      # 'start' runs 'up -d', which recreates the
+                             # containers with the new environment
 ```
 
-Set:
+### Verify
 
-```yaml
-ui:
-  ssl: true
-  host: unifiedrepo.chengerailabs.co.zw
-  port: 443
-rest:
-  ssl: true
-  host: unifiedrepo.chengerailabs.co.zw
-  port: 443
-  namespace: /server
-```
-
-Answer **yes** to rebuild the frontend, then recreate the backend so the new
-compose env takes effect:
-
-```bash
-chengetai start <name>      # 'start' runs 'up -d', which applies the changes
-```
-
-### 3. Install nginx and add the reverse proxy
-
-```bash
-sudo apt-get update && sudo apt-get install -y nginx
-sudo tee /etc/nginx/sites-available/unifiedrepo.chengerailabs.co.zw >/dev/null <<'NGINX'
-server {
-    listen 80;
-    server_name unifiedrepo.chengerailabs.co.zw;
-
-    client_max_body_size 1024m;   # allow large bitstream uploads
-
-    # DSpace REST API
-    location /server {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # DSpace Angular UI (server-side rendered)
-    location / {
-        proxy_pass http://127.0.0.1:4000;
-        proxy_http_version 1.1;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade           $http_upgrade;
-        proxy_set_header Connection        "upgrade";
-    }
-}
-NGINX
-sudo ln -sf /etc/nginx/sites-available/unifiedrepo.chengerailabs.co.zw \
-            /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-### 4. Get a TLS certificate
-
-```bash
-sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d unifiedrepo.chengerailabs.co.zw \
-     --redirect --agree-tos -m admin@chengerailabs.co.zw
-```
-
-certbot rewrites the nginx site to serve HTTPS on 443 and redirect HTTP → HTTPS,
-and auto-renews via a systemd timer.
-
-### 5. Open web ports, close the raw app ports
-
-```bash
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-```
-
-Optional hardening: once nginx is proxying, you no longer need `4000`/`8080`
-exposed publicly. You can `sudo ufw deny 4000/tcp` and `sudo ufw deny 8080/tcp`
-(nginx reaches them on `127.0.0.1`).
-
-### 6. Verify
-
-- Open **https://unifiedrepo.chengerailabs.co.zw** — the UI loads over TLS.
-- REST: **https://unifiedrepo.chengerailabs.co.zw/server** returns the DSpace
-  REST root document.
+- Open **https://your-domain.example** — the UI loads over TLS.
+- REST: **https://your-domain.example/server** returns the DSpace REST root
+  document.
 - Log in as admin and confirm you can browse and submit.
 
 > **If the UI loads but searches/logins fail**, the browser is still trying to
-> reach the REST API on the old IP/port. Recheck step 2 (`config.yml` `rest`
-> block **and** `dspace__P__server__P__url`), rebuild the frontend, and
-> `chengetai start <name>`.
+> reach the REST API on the old IP/port — DSpace's CORS check rejects requests
+> from an origin that doesn't match `DSPACE_UI_URL`/`DSPACE_REST_URL`. Recheck
+> those two variables in `engine/.env`, then `chengetai start <name>` to
+> recreate the containers (a `restart` alone does **not** pick up `.env`
+> changes — only `up -d` does).
 
 ---
 

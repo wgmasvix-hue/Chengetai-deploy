@@ -54,9 +54,9 @@ chengetai orcid dare --disable    # remove ORCID; password login remains
 
 ## What gets written
 
-A single managed block in `deployments/<name>/engine/dspace/config/local.cfg`
-(the only config file the campus stack bind-mounts into the backend, so a
-restart applies it):
+A single managed block in `deployments/<name>/engine/config/local.cfg`
+(the only config file the engine bind-mounts into the backend, so a restart
+applies it):
 
 ```properties
 # >>> ChengetAi ORCID (managed — do not edit between these markers) >>>

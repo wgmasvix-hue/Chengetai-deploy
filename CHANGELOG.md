@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.23.0
+
+- **DSpace 10, one-click, for real.** The `dspace` platform plugin
+  (`chengetai deploy dspace`, `install-online.sh --with-dspace`) was pointing
+  at a stale reference repository — a different DSpace 8 "campus" engine with
+  an incompatible contract (`docker-compose-campus.yml`, a frontend
+  `config.yml`, `Dockerfile.angular` rebuilds) that had drifted from the rest
+  of the codebase (`chengetai verify`, the docs, `chengetai status`/`pcompose`
+  all already assumed `docker-compose.yml`). It's rewritten to correctly
+  orchestrate the actual canonical engine,
+  [ChengetAi-DSPACE-Engine](https://github.com/wgmasvix-hue/ChengetAi-DSPACE-Engine)
+  (DSpace 10, `dspace-10_x` by default): clone, generate `.env` +
+  `config/local.cfg` from the profile (ports, instance name, admin identity,
+  a generated DB password, the server's detected public IP), pull, start,
+  wait for the backend, and create the administrator — fully non-interactively
+  end to end. `start`/`stop`/`restart`/`status`/`logs`/`backup`/`restore`/
+  `update`/`remove`/`admin`/`domain` are rewired onto the engine's real
+  compose services (namespaced per deployment) instead of fixed container
+  names. `chengetai brand`/`chengetai orcid` are corrected to the engine's
+  actual capability (site name + SVG logo; local.cfg at its real path) —
+  colour theming and baked-in favicons needed a per-deployment frontend
+  rebuild the new engine doesn't do, so those are now an honest no-op with a
+  warning instead of a silent no-effect. Docs (`DEPLOY-DSPACE.md`,
+  `BRANDING.md`, `ORCID.md`) updated to match.
+
 ## 2.22.0
 
 - **Fleet page in the dashboard.** The Model A control plane finally has a UI —
