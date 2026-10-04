@@ -1,0 +1,161 @@
+services:
+  dspacedb:
+    image: "postgres:${POSTGRES_VERSION:-15}"
+    restart: unless-stopped
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_DB: dspace
+      POSTGRES_USER: dspace
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in engine/.env}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dspace -d dspace"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
+    networks: [dspacenet]
+
+  dspacesolr:
+    image: "dspace/dspace-solr:${DSPACE_IMAGE_TAG:?Set DSPACE_IMAGE_TAG in engine/.env}"
+    restart: unless-stopped
+    working_dir: /var/solr/data
+    volumes:
+      - solr_data:/var/solr/data
+    user: root
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        init-var-solr
+        precreate-core authority /opt/solr/server/solr/configsets/authority
+        cp -r /opt/solr/server/solr/configsets/authority/* authority
+        precreate-core oai /opt/solr/server/solr/configsets/oai
+        cp -r /opt/solr/server/solr/configsets/oai/* oai
+        precreate-core search /opt/solr/server/solr/configsets/search
+        cp -r /opt/solr/server/solr/configsets/search/* search
+        precreate-core statistics /opt/solr/server/solr/configsets/statistics
+        cp -r /opt/solr/server/solr/configsets/statistics/* statistics
+        precreate-core qaevent /opt/solr/server/solr/configsets/qaevent
+        cp -r /opt/solr/server/solr/configsets/qaevent/* qaevent
+        precreate-core suggestion /opt/solr/server/solr/configsets/suggestion
+        cp -r /opt/solr/server/solr/configsets/suggestion/* suggestion
+        precreate-core audit /opt/solr/server/solr/configsets/audit
+        cp -r /opt/solr/server/solr/configsets/audit/* audit
+        chown -R solr:solr /var/solr
+        exec runuser -u solr -- solr-foreground
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8983'"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks: [dspacenet]
+
+  dspace:
+    image: "dspace/dspace:${DSPACE_IMAGE_TAG:?Set DSPACE_IMAGE_TAG in engine/.env}"
+    restart: unless-stopped
+    depends_on:
+      dspacedb:
+        condition: service_healthy
+      dspacesolr:
+        condition: service_healthy
+    environment:
+      dspace__P__dir: /dspace
+      dspace__P__server__P__url: "${DSPACE_SERVER_URL:?Set DSPACE_SERVER_URL in engine/.env}"
+      dspace__P__ui__P__url: "${DSPACE_UI_URL:?Set DSPACE_UI_URL in engine/.env}"
+      dspace__P__server__P__ssr__P__url: http://dspace:8080/server
+      dspace__P__name: "${INSTITUTION:-DSpace Repository}"
+      db__P__url: jdbc:postgresql://dspacedb:5432/dspace
+      db__P__username: dspace
+      db__P__password: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in engine/.env}"
+      solr__P__server: http://dspacesolr:8983/solr
+      rest__P__cors__P__allowed__D__origins: "${DSPACE_UI_URL:?Set DSPACE_UI_URL in engine/.env}"
+      LOGGING_CONFIG: /dspace/config/log4j2-container.xml
+    volumes:
+      - assetstore:/dspace/assetstore
+      - ./config/local.cfg:/dspace/config/local.cfg:ro
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${REST_PORT:-8080}:8080"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        until bash -c '</dev/tcp/dspacedb/5432' 2>/dev/null; do sleep 2; done
+        /dspace/bin/dspace database migrate
+        exec java -jar /dspace/webapps/server-boot.jar
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080'"]
+      interval: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 360s
+    networks: [dspacenet]
+
+  dspace-angular:
+    image: "dspace/dspace-angular:${DSPACE_ANGULAR_TAG:?Set DSPACE_ANGULAR_TAG in engine/.env}"
+    restart: unless-stopped
+    depends_on:
+      dspace:
+        condition: service_started
+    environment:
+      DSPACE_UI_SSL: "${DSPACE_UI_SSL:-false}"
+      DSPACE_UI_HOST: "${DSPACE_UI_HOST:?Set DSPACE_UI_HOST in engine/.env}"
+      DSPACE_UI_PORT: "${DSPACE_UI_PORT:-4000}"
+      DSPACE_UI_NAMESPACE: /
+      DSPACE_UI_BASEURL: "${DSPACE_UI_URL:?Set DSPACE_UI_URL in engine/.env}"
+      DSPACE_REST_SSL: "${DSPACE_REST_SSL:-false}"
+      DSPACE_REST_HOST: "${DSPACE_REST_HOST:?Set DSPACE_REST_HOST in engine/.env}"
+      DSPACE_REST_PORT: "${DSPACE_REST_PORT:-8080}"
+      DSPACE_REST_NAMESPACE: /server
+      DSPACE_REST_SSRBASEURL: http://dspace:8080/server
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${UI_PORT:-4000}:4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+    networks: [dspacenet]
+
+  dspace-cli:
+    image: "dspace/dspace-cli:${DSPACE_IMAGE_TAG:?Set DSPACE_IMAGE_TAG in engine/.env}"
+    profiles: [tools]
+    environment:
+      db__P__url: jdbc:postgresql://dspacedb:5432/dspace
+      db__P__username: dspace
+      db__P__password: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in engine/.env}"
+      solr__P__server: http://dspacesolr:8983/solr
+    volumes:
+      - assetstore:/dspace/assetstore
+      - ./config/local.cfg:/dspace/config/local.cfg:ro
+    networks: [dspacenet]
+
+  caddy:
+    image: caddy:2.9.1-alpine
+    profiles: [caddy]
+    restart: unless-stopped
+    depends_on:
+      - dspace
+      - dspace-angular
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [dspacenet]
+
+volumes:
+  assetstore:
+  pgdata:
+  solr_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  dspacenet:

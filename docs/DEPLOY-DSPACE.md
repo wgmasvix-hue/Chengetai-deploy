@@ -1,9 +1,75 @@
 # Deploying DSpace with ChengetAi Deploy
 
-The exact, field-tested flow for standing up DSpace 8 on a fresh Ubuntu
-server — the path validated in production. Two parts:
+## DSpace 10 deployment
 
-1. [Deploy DSpace](#part-1--deploy-dspace) — get it running on an IP.
+Run the following on a supported Ubuntu server. ChengetAi Deploy validates the
+host and Docker/Compose, pins DSpace images to a stable release, creates a
+deployment profile and persistent volumes, generates database and administrator
+credentials, starts the backend/Angular/Solr/PostgreSQL services, waits for
+database migrations and checks the REST API and UI.
+
+```bash
+sudo chengetai deploy dspace --version 10.1
+```
+
+For HTTPS with the bundled Caddy reverse proxy, point DNS at this server first:
+ensure inbound ports 80/tcp and 443/tcp (optionally 443/udp for HTTP/3) are
+allowed by the cloud firewall. ChengetAi Deploy opens these ports in UFW when
+UFW is active and it has permission.
+
+```bash
+sudo chengetai deploy dspace \
+  --version 10.1 \
+  --domain repository.example.org \
+  --production
+```
+
+Interactive mode is the default. To deploy without prompts, provide an admin
+email:
+
+```bash
+sudo chengetai deploy dspace \
+  --version 10.1 \
+  --domain repository.example.org \
+  --admin-email admin@example.org \
+  --non-interactive
+```
+
+The deployment prints the UI/REST URLs, administrator email, and initial
+administrator password. The password is also saved in
+`deployments/dspace/admin-credentials` with mode `0600`; database credentials
+are in the mode-`0600` `deployments/dspace/engine/.env`. Persistent data is held
+in per-deployment Docker volumes; backups and DSpace configuration are stored
+under the deployment directory. Use a different deployment name when managing
+multiple repositories on one host.
+
+Day-two commands:
+
+```bash
+chengetai status dspace
+chengetai logs dspace
+chengetai backup dspace
+chengetai restore dspace
+chengetai restart dspace
+chengetai update dspace
+chengetai verify dspace
+```
+
+> **Upstream image limitation:** The official DSpace 10.1 Docker documentation
+> labels the published Compose images/resources as development/testing images
+> and advises against using them as-is in production. ChengetAi Deploy pins
+> versioned images and configures persistent storage, private database/Solr
+> networking, health checks, and HTTPS, but that does not remove the upstream
+> image limitation. Institutions requiring supported production images should
+> build and audit their own images using the official DSpace Dockerfiles.
+
+## Legacy DSpace 8 deployment
+
+These instructions document the older DSpace 8 reference-engine path for
+existing installations. New DSpace deployments use DSpace 10 by default. Two
+parts:
+
+1. [Legacy DSpace 8 deployment](#part-1--deploy-legacy-dspace-8) — get it running on an IP.
 2. [Custom domain + HTTPS](#part-2--custom-domain--https) — put a real
    URL in front of it with TLS.
 
@@ -23,7 +89,7 @@ free -h && df -h /
 
 ---
 
-## Part 1 — Deploy DSpace
+## Part 1 — Deploy legacy DSpace 8
 
 ### 1. Open a resilient session
 

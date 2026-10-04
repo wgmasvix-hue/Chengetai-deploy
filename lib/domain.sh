@@ -31,12 +31,24 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$DOMAIN" ] || error "Usage: chengetai domain [name] <domain> [--email you@org]"
-[ "$(id -u)" = "0" ] || error "Setting up a domain needs root: sudo chengetai domain $NAME $DOMAIN"
 
 banner "Domain + HTTPS (Caddy)"
 
 # Loads the profile and the platform plugin (gives us the UI/REST ports).
 resolve_deployment "$NAME"
+
+if declare -F is_dspace10 >/dev/null && is_dspace10; then
+    info "Deployment : $DEPLOY_NAME ($PLUGIN_DESCRIPTION)"
+    info "Domain     : https://$DOMAIN"
+    plugin_domain "$DOMAIN"
+    echo ""
+    echo "  Your site: https://$DOMAIN"
+    echo "  Before it works, point DNS at this server and allow ports 80 and 443."
+    echo ""
+    exit 0
+fi
+
+[ "$(id -u)" = "0" ] || error "Setting up a domain needs root: sudo chengetai domain $NAME $DOMAIN"
 
 UI="$(ui_port)"
 REST="$(rest_port)"

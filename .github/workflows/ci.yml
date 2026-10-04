@@ -77,7 +77,19 @@ jobs:
           STAFF_PORT=8100
           INSTANCE=test
           DB_PASSWORD=pw1
+          POSTGRES_PASSWORD=pw3
           DB_ROOT_PASSWORD=pw2
+          DSPACE_IMAGE_TAG=dspace-10.1
+          DSPACE_ANGULAR_TAG=dspace-10.1-dist
+          PUBLIC_URL=https://repository.example.org
+          DSPACE_SERVER_URL=https://repository.example.org/server
+          DSPACE_UI_URL=https://repository.example.org
+          DSPACE_UI_HOST=repository.example.org
+          DSPACE_UI_PORT=443
+          DSPACE_UI_SSL=true
+          DSPACE_REST_HOST=repository.example.org
+          DSPACE_REST_PORT=443
+          DSPACE_REST_SSL=true
           KOHA_ADMIN_USER=admin
           KOHA_ADMIN_PASS=Secret123
           LIBRARY_NAME=TestLibrary
@@ -105,6 +117,11 @@ jobs:
             fi
           done
           exit $fail
+      - name: Validate complete DSpace 10 stack including optional services
+        run: |
+          COMPOSE_PROFILES=tools,caddy docker compose \
+            --env-file /tmp/dummy.env \
+            -f templates/dspace/engine/docker-compose.yml config >/dev/null
       - name: v3 engine — render + no-hardcoded-IP guard
         run: |
           # The generator renders the example deployment, validates the

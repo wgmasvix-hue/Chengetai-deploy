@@ -3,19 +3,18 @@
 One Command. Complete Deployment.
 
 ChengetAi Deploy is an **orchestration platform** for deploying and
-operating institutional platforms — starting with **DSpace 8** — on any
-Ubuntu server. It clones, configures, brands, deploys, verifies, monitors
-and maintains canonical open-source repositories (DSpace via the Bulawayo
-Polytechnic reference repository); it never reimplements the deployment
-logic it drives.
+operating institutional platforms — starting with **DSpace 10** — on an
+Ubuntu server. The DSpace 10 deployment uses versioned upstream container
+images, persistent Docker volumes, generated secrets, health checks, and an
+optional Caddy HTTPS proxy. Existing DSpace 8 profiles continue to use their
+original deployment engine.
 
 It ships three tiers — an Angular dashboard, a Node/Express REST API, and a
 Bash CLI + plugin engine. See `docs/ARCHITECTURE.md` for the full design,
 `docs/API.md` for the REST API, and `docs/PLUGIN-GUIDE.md` to add a platform.
 
-**Deploying DSpace?** Follow `docs/DEPLOY-DSPACE.md` — the exact,
-field-tested flow from a fresh server to a live site, including custom
-domain + HTTPS with nginx.
+**Deploying DSpace?** Follow `docs/DEPLOY-DSPACE.md` for the DSpace 10 command
+flow, production-domain setup, and day-two operations.
 
 **Managed deployments?** `docs/FLEET.md` describes the fleet control plane —
 enrol servers, drive them remotely, and disable any deployment centrally
@@ -129,7 +128,7 @@ new platforms can be added without touching the CLI itself.
 
 | Platform | Status |
 |---|---|
-| `dspace` | Available — DSpace 8 institutional repository |
+| `dspace` | Available — DSpace 10 institutional repository (existing DSpace 8 deployments remain supported) |
 | `koha` | Available — Koha library management system |
 | `moodle` | Available — Moodle learning management system |
 | `ojs` | Available — Open Journal Systems (scholarly publishing) |
@@ -137,8 +136,13 @@ new platforms can be added without touching the CLI itself.
 | `wordpress` | Available — WordPress website / CMS |
 
 ```bash
-chengetai deploy dspace
+chengetai deploy dspace --version 10.1
 ```
+
+For a production-style domain deployment, use `--domain repository.example.org
+--production`. The installer pins DSpace images to version tags; it never uses
+the moving `latest` tag. See the deployment guide for the upstream Docker image
+limitations that still apply.
 
 ## Project structure
 
