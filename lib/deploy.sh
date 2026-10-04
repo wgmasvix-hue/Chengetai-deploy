@@ -69,6 +69,12 @@ if is_deployment "$ARG"; then
     if [ -n "$DEPLOY_DOMAIN" ] && [ "$DEPLOY_DOMAIN" != "${PUBLIC_DOMAIN:-}" ]; then
         error "This deployment already has different domain metadata. Use: chengetai domain $DEPLOY_NAME $DEPLOY_DOMAIN"
     fi
+    if [ -n "$DEPLOY_ADMIN_EMAIL" ] && [ "$DEPLOY_ADMIN_EMAIL" != "${ADMIN_EMAIL:-}" ]; then
+        error "This deployment already has a different administrator email. Use: chengetai admin $DEPLOY_NAME --email $DEPLOY_ADMIN_EMAIL"
+    fi
+    if [ "$PRODUCTION" = "1" ] && [ "${DSPACE_PRODUCTION:-0}" != "1" ]; then
+        error "Production mode is set when creating a deployment. Use a new deployment or configure this deployment explicitly."
+    fi
 elif [ -n "$ARG" ] && [ -f "$TEMPLATES_DIR/$ARG/plugin.sh" ]; then
     if [ "$ARG" = "dspace" ]; then
         export DSPACE_VERSION="${DEPLOY_VERSION:-10.1}"

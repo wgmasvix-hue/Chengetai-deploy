@@ -3,21 +3,13 @@
 # Sourced by lib/utils.sh:load_plugin — requires DEPLOY_DIR, DEPLOY_NAME and
 # the profile variables (INSTITUTION, ADMIN_EMAIL, ...) to be set.
 #
-# ChengetAi Deploy is an ORCHESTRATOR. The canonical DSpace deployment
-# lives in the Bulawayo Polytechnic DSpace repository; this plugin never
-# duplicates that logic. Per deployment it:
-#
-#   clone      the reference repository into deployments/<name>/engine/
-#   configure  ports, instance name, admin account, generated DB secret
-#              (via the environment contract the reference repo supports)
-#   brand      copy deployments/<name>/branding/ over the engine assets
-#   deploy     run the reference repository's install.sh
-#   verify     the installer waits for the backend health endpoint
-#   maintain   start/stop/status/logs/backup/restore/update/remove below
+# ChengetAi Deploy orchestrates DSpace 10 using version-pinned upstream
+# images. Existing profiles without DSPACE_VERSION continue using the legacy
+# reference-engine installer.
 
 # shellcheck disable=SC2034  # PLUGIN_* consumed by the CLI after sourcing
 PLUGIN_NAME="dspace"
-PLUGIN_DESCRIPTION="DSpace 10 institutional repository"
+PLUGIN_DESCRIPTION="DSpace institutional repository"
 PLUGIN_STATUS="available"
 
 # The canonical DSpace deployment implementation.
@@ -113,6 +105,11 @@ plugin_admin() {
             echo "  Initial password (saved in $credentials): $(awk -F= '$1=="pass""word" {print substr($0, index($0, "=") + 1)}' "$credentials")"
             return 0
         fi
+        if [ "${CHENGETAI_ADMIN_COMMAND:-0}" != "1" ]; then
+            echo "  Administrator : $ADMIN_EMAIL"
+            echo "  Password is not stored. Manage it with: chengetai admin $DEPLOY_NAME"
+            return 0
+        fi
         if ! pcompose ps --status running --services | grep -qx dspace; then
             error "The DSpace backend is not running. Start it first: chengetai start $DEPLOY_NAME"
         fi
@@ -120,22 +117,20 @@ plugin_admin() {
         if [ -z "$pass" ] && [ "${CHENGETAI_ADMIN_COMMAND:-0}" = "1" ]; then
             info "Launching DSpace administrator setup..."
             pcompose run --rm dspace-cli create-administrator
+            rm -f "$credentials"
+            info "Administrator password was not saved; update it with chengetai admin $DEPLOY_NAME --generate."
             return 0
         fi
         if [ -z "$pass" ]; then
-            pass="$(openssl rand -hex 24)"
+            pass="$(_dspace10_admin_secret)"
         fi
         info "Creating/updating administrator $ADMIN_EMAIL..."
-        if [ -n "$pass" ]; then
-            pcompose run --rm dspace-cli create-administrator \
-                -e "$ADMIN_EMAIL" \
-                -f "${ADMIN_FIRST_NAME:-Repository}" \
-                -l "${ADMIN_LAST_NAME:-Admin}" \
-                -c "${ADMIN_LANG:-en}" \
-                -p "$pass"
-        else
-            pcompose run --rm dspace-cli create-administrator
-        fi
+        pcompose run --rm dspace-cli create-administrator \
+            -e "$ADMIN_EMAIL" \
+            -f "${ADMIN_FIRST_NAME:-Repository}" \
+            -l "${ADMIN_LAST_NAME:-Admin}" \
+            -c "${ADMIN_LANG:-en}" \
+            -p "$pass"
         umask 077
         {
             printf 'email=%s\n' "$ADMIN_EMAIL"
@@ -205,7 +200,11 @@ _brand_set_key() {
 plugin_brand() {
     require_engine
     local cfg brand
-    cfg="$(engine_dir)/dspace/config/local.cfg"
+    if is_dspace10; then
+        cfg="$(engine_dir)/config/local.cfg"
+    else
+        cfg="$(engine_dir)/dspace/config/local.cfg"
+    fi
     brand="$(branding_dir)"
     [ -f "$cfg" ] || error "local.cfg not found for '$DEPLOY_NAME' ($cfg). Deploy first."
 
@@ -347,12 +346,17 @@ THEME
 
     if [ "$do_apply" = 1 ]; then
         info "Applying branding..."
-        apply_branding
-        info "Rebuilding the frontend image (logo/favicon) — this can take a few minutes..."
-        docker build -f "$(engine_dir)/Dockerfile.angular" -t bpoly-dspace-angular:latest "$(engine_dir)" >/dev/null
-        if container_running dspace; then
-            pcompose up -d dspace-angular
+        if is_dspace10; then
             pcompose restart dspace
+            warn "The prebuilt Angular image does not include deployment logo/favicon/theme overrides."
+        else
+            apply_branding
+            info "Rebuilding the frontend image (logo/favicon) — this can take a few minutes..."
+            docker build -f "$(engine_dir)/Dockerfile.angular" -t bpoly-dspace-angular:latest "$(engine_dir)" >/dev/null
+            if container_running dspace; then
+                pcompose up -d dspace-angular
+                pcompose restart dspace
+            fi
         fi
         info "Applied. The repository now presents as $REPOSITORY_NAME."
     else
@@ -385,7 +389,11 @@ _orcid_strip() {
 plugin_orcid() {
     require_engine
     local cfg
-    cfg="$(engine_dir)/dspace/config/local.cfg"
+    if is_dspace10; then
+        cfg="$(engine_dir)/config/local.cfg"
+    else
+        cfg="$(engine_dir)/dspace/config/local.cfg"
+    fi
     [ -f "$cfg" ] || error "local.cfg not found for '$DEPLOY_NAME' ($cfg). Deploy first."
 
     local action="enable" env="sandbox" client_id="" restart=1
@@ -406,7 +414,11 @@ plugin_orcid() {
     # The redirect URI DSpace advertises; it MUST be registered with the ORCID
     # app or the OAuth handshake is rejected.
     local server_url redirect
-    server_url="$(grep -sE '^dspace\.server\.url[[:space:]]*=' "$cfg" | head -1 | cut -d= -f2- | tr -d ' ')"
+    if is_dspace10; then
+        server_url=$(_dspace10_env_value DSPACE_SERVER_URL)
+    else
+        server_url="$(grep -sE '^dspace\.server\.url[[:space:]]*=' "$cfg" | head -1 | cut -d= -f2- | tr -d ' ')"
+    fi
     redirect="${server_url%/}/api/authn/orcid"
 
     case "$action" in
@@ -431,7 +443,7 @@ plugin_orcid() {
       disable)
         _orcid_strip "$cfg"
         info "ORCID disabled for '$DEPLOY_NAME' (managed block removed; password login remains)."
-        if [ "$restart" = 1 ] && container_running dspace; then
+        if [ "$restart" = 1 ] && { is_dspace10 && pcompose ps --status running --services | grep -qx dspace || { ! is_dspace10 && container_running dspace; }; }; then
             info "Restarting the backend to apply..."
             pcompose restart dspace
         fi
@@ -480,7 +492,7 @@ plugin_orcid() {
     echo "    Secret    : stored in $cfg"
     echo ""
     if [ "$restart" = 1 ]; then
-        if container_running dspace; then
+        if { is_dspace10 && pcompose ps --status running --services | grep -qx dspace || { ! is_dspace10 && container_running dspace; }; }; then
             info "Restarting the backend to apply (first boot after a config change can take a few minutes)..."
             pcompose restart dspace
             echo ""
@@ -518,8 +530,13 @@ _dspace10_random_secret() {
     od -An -N32 -tx1 /dev/urandom | tr -d ' \n'
 }
 
+_dspace10_admin_secret() {
+    LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 48
+}
+
 _dspace10_env_value() {
     local key="$1"
+    [ -f "$(engine_dir)/.env" ] || { echo ""; return 0; }
     sed -n "s/^${key}=//p" "$(engine_dir)/.env" | head -n 1
 }
 
@@ -541,7 +558,7 @@ _dspace10_create_initial_admin() {
     if [ -f "$credentials" ]; then
         pass=$(awk -F= '$1=="pass""word" {print substr($0,index($0,"=")+1)}' "$credentials")
     else
-        pass=$(_dspace10_random_secret)
+        pass=$(_dspace10_admin_secret)
         umask 077
         {
             printf 'email=%s\n' "$ADMIN_EMAIL"
@@ -576,6 +593,22 @@ _dspace10_wait_for_health() {
     error "DSpace did not become healthy in 12 minutes. Inspect logs with: chengetai logs $DEPLOY_NAME"
 }
 
+_dspace10_open_firewall() {
+    command -v ufw >/dev/null 2>&1 || return 0
+    ufw status 2>/dev/null | grep -q "Status: active" || return 0
+    if [ "$(id -u)" = "0" ]; then
+        if ufw allow 80/tcp >/dev/null \
+            && ufw allow 443/tcp >/dev/null \
+            && ufw allow 443/udp >/dev/null; then
+            info "Opened HTTP/HTTPS ports in UFW."
+        else
+            warn "Could not update UFW; allow inbound ports 80/tcp, 443/tcp, and 443/udp for Caddy."
+        fi
+    else
+        warn "UFW is active; allow inbound ports 80/tcp, 443/tcp, and 443/udp for Caddy."
+    fi
+}
+
 _dspace10_deploy() {
     local engine version_tag angular_tag host public_url rest_url ui_host_port rest_host_port host_bind ssl profile
     engine="$(engine_dir)"
@@ -591,6 +624,7 @@ _dspace10_deploy() {
         error "Production deployments require Caddy and a domain."
     fi
 
+    require_docker
     mkdir -p "$engine/config" "$DEPLOY_DIR/backups"
     chmod 700 "$engine" "$engine/config" "$DEPLOY_DIR/backups"
     touch "$engine/config/local.cfg"
@@ -632,6 +666,7 @@ CADDY
         rest_url="http://${host}:$(rest_port)/server"
     fi
 
+    [ "$profile" = "caddy" ] && _dspace10_open_firewall
     local db_password
     db_password=$(_dspace10_env_value POSTGRES_PASSWORD)
     db_password="${db_password:-$(_dspace10_random_secret)}"
@@ -1044,7 +1079,11 @@ plugin_edit() {
             ;;
         config)
             require_engine
-            file="$(engine_dir)/config.yml"
+            if is_dspace10; then
+                file="$(engine_dir)/config/local.cfg"
+            else
+                file="$(engine_dir)/config.yml"
+            fi
             [ -f "$file" ] || error "File not found: $file"
             echo "Opening: $file"
             echo ""
@@ -1072,10 +1111,15 @@ plugin_edit() {
     if confirm "Rebuild the frontend now so the change goes live?"; then
         require_docker
         require_engine
-        apply_branding
-        info "Rebuilding frontend..."
-        docker build -f "$(engine_dir)/Dockerfile.angular" -t bpoly-dspace-angular:latest "$(engine_dir)"
-        pcompose up -d dspace-angular
+        if is_dspace10; then
+            info "Restarting DSpace to load the updated configuration..."
+            pcompose restart dspace
+        else
+            apply_branding
+            info "Rebuilding frontend..."
+            docker build -f "$(engine_dir)/Dockerfile.angular" -t bpoly-dspace-angular:latest "$(engine_dir)"
+            pcompose up -d dspace-angular
+        fi
         echo ""
         info "Frontend rebuilt and restarted."
     else

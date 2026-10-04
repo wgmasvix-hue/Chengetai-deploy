@@ -12,15 +12,15 @@ if [ -z "$PLATFORM" ]; then
     if [ "${NON_INTERACTIVE:-0}" = "1" ]; then
         PLATFORM="dspace"
     else
-    echo "Available platforms:"
-    echo ""
-    for p in $(list_platforms); do
-        load_plugin "$p"
-        echo "  $p - $PLUGIN_DESCRIPTION"
-    done
-    echo ""
-    read -rp "Platform [dspace] : " PLATFORM
-    PLATFORM="${PLATFORM:-dspace}"
+        echo "Available platforms:"
+        echo ""
+        for p in $(list_platforms); do
+            load_plugin "$p"
+            echo "  $p - $PLUGIN_DESCRIPTION"
+        done
+        echo ""
+        read -rp "Platform [dspace] : " PLATFORM
+        PLATFORM="${PLATFORM:-dspace}"
     fi
 fi
 
@@ -51,11 +51,15 @@ if [ "$PLATFORM" = "dspace" ]; then
     DSPACE_VERSION="${DSPACE_VERSION:-10.1}"
     [[ "$DSPACE_VERSION" =~ ^10\.[0-9]+$ ]] \
         || error "Unsupported DSpace version '$DSPACE_VERSION'. Use a stable 10.x version such as 10.1."
+    PLUGIN_DESCRIPTION="DSpace $DSPACE_VERSION institutional repository"
     if [ -n "${PUBLIC_DOMAIN:-}" ] && ! [[ "$PUBLIC_DOMAIN" =~ ^([[:alnum:]]([[:alnum:]-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,63}$ ]]; then
         error "Invalid domain '$PUBLIC_DOMAIN'. Supply a DNS hostname such as repository.example.org."
     fi
     if [ "${DSPACE_CADDY:-0}" = "1" ] && [ -z "${PUBLIC_DOMAIN:-}" ]; then
         error "Caddy integration requires --domain."
+    fi
+    if [ "${DSPACE_PRODUCTION:-0}" = "1" ] && [ "${DSPACE_CADDY:-0}" != "1" ]; then
+        error "Production deployments require Caddy and --domain."
     fi
     if [ "${NON_INTERACTIVE:-0}" = "1" ] && [ -z "${ADMIN_EMAIL:-}" ]; then
         error "Non-interactive DSpace deployment requires --admin-email."
@@ -83,6 +87,11 @@ fi
 # so several deployments can share one server.
 UI_PORT="${UI_PORT:-4000}"
 REST_PORT="${REST_PORT:-8080}"
+[[ "$UI_PORT" =~ ^[0-9]+$ ]] && [ "$UI_PORT" -ge 1 ] && [ "$UI_PORT" -le 65535 ] \
+    || error "UI_PORT must be a TCP port between 1 and 65535."
+[[ "$REST_PORT" =~ ^[0-9]+$ ]] && [ "$REST_PORT" -ge 1 ] && [ "$REST_PORT" -le 65535 ] \
+    || error "REST_PORT must be a TCP port between 1 and 65535."
+[ "$UI_PORT" != "$REST_PORT" ] || error "UI_PORT and REST_PORT must be different."
 
 DEPLOY_DIR="$DEPLOYMENTS_DIR/$NAME"
 mkdir -p "$DEPLOY_DIR"

@@ -67,6 +67,7 @@ if grep -q "Ubuntu 24" /etc/os-release || grep -q "Ubuntu 22" /etc/os-release; t
     pass "Ubuntu Version"
 else
     fail "Unsupported Ubuntu Version"
+    MISSING=$((MISSING + 1))
 fi
 
 # CPU
@@ -75,6 +76,7 @@ if [ "$CPU" -ge 2 ]; then
     pass "CPU Cores: $CPU"
 else
     fail "Minimum 2 CPU cores required"
+    MISSING=$((MISSING + 1))
 fi
 
 # RAM
@@ -83,6 +85,7 @@ if [ "$RAM" -ge 4 ]; then
     pass "Memory: ${RAM}GB"
 else
     fail "Minimum 4GB RAM required"
+    MISSING=$((MISSING + 1))
 fi
 
 # Disk
@@ -91,6 +94,7 @@ if [ "$DISK" -ge 40 ]; then
     pass "Disk Space: ${DISK}GB Free"
 else
     fail "Minimum 40GB free space required"
+    MISSING=$((MISSING + 1))
 fi
 
 # Internet — ICMP is often blocked, so fall back to HTTPS probes.
@@ -100,6 +104,7 @@ if ping -c 1 -W 2 github.com >/dev/null 2>&1 \
     pass "Internet Connectivity"
 else
     fail "No Internet Connection"
+    MISSING=$((MISSING + 1))
 fi
 
 # Basic tools

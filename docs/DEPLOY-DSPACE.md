@@ -13,6 +13,9 @@ sudo chengetai deploy dspace --version 10.1
 ```
 
 For HTTPS with the bundled Caddy reverse proxy, point DNS at this server first:
+ensure inbound ports 80/tcp and 443/tcp (optionally 443/udp for HTTP/3) are
+allowed by the cloud firewall. ChengetAi Deploy opens these ports in UFW when
+UFW is active and it has permission.
 
 ```bash
 sudo chengetai deploy dspace \
@@ -66,7 +69,7 @@ These instructions document the older DSpace 8 reference-engine path for
 existing installations. New DSpace deployments use DSpace 10 by default. Two
 parts:
 
-1. [Deploy DSpace](#part-1--deploy-dspace) — get it running on an IP.
+1. [Legacy DSpace 8 deployment](#part-1--deploy-legacy-dspace-8) — get it running on an IP.
 2. [Custom domain + HTTPS](#part-2--custom-domain--https) — put a real
    URL in front of it with TLS.
 
