@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DSpace 8 platform plugin for ChengetAi Deploy.
+# DSpace platform plugin for ChengetAi Deploy.
 # Sourced by lib/utils.sh:load_plugin — requires DEPLOY_DIR, DEPLOY_NAME and
 # the profile variables (INSTITUTION, ADMIN_EMAIL, ...) to be set.
 #
@@ -17,7 +17,7 @@
 
 # shellcheck disable=SC2034  # PLUGIN_* consumed by the CLI after sourcing
 PLUGIN_NAME="dspace"
-PLUGIN_DESCRIPTION="DSpace 8 institutional repository"
+PLUGIN_DESCRIPTION="DSpace 10 institutional repository"
 PLUGIN_STATUS="available"
 
 # The canonical DSpace deployment implementation.
@@ -34,6 +34,10 @@ engine_dir() {
     echo "$DEPLOY_DIR/engine"
 }
 
+is_dspace10() {
+    [[ "${DSPACE_VERSION:-}" =~ ^10\.[0-9]+$ ]]
+}
+
 branding_dir() {
     echo "$DEPLOY_DIR/branding"
 }
@@ -47,7 +51,10 @@ rest_port() {
 }
 
 require_engine() {
-    if [ ! -d "$(engine_dir)/.git" ]; then
+    if is_dspace10; then
+        [ -f "$(engine_dir)/docker-compose.yml" ] \
+            || error "Deployment '$DEPLOY_NAME' has not been deployed yet. Run: chengetai deploy $DEPLOY_NAME"
+    elif [ ! -d "$(engine_dir)/.git" ]; then
         error "Deployment '$DEPLOY_NAME' has not been deployed yet. Run: chengetai deploy $DEPLOY_NAME"
     fi
 }
@@ -57,22 +64,40 @@ require_engine() {
 # (The reference stack uses fixed container names, so only one DSpace
 # deployment can be RUNNING per server; volumes stay separate.)
 pcompose() {
-    docker compose -p "chengetai-$DEPLOY_NAME" \
-        -f "$(engine_dir)/docker-compose-campus.yml" \
-        --project-directory "$(engine_dir)" "$@"
+    if is_dspace10; then
+        docker compose -p "chengetai-$DEPLOY_NAME" \
+            --env-file "$(engine_dir)/.env" \
+            -f "$(engine_dir)/docker-compose.yml" \
+            --project-directory "$(engine_dir)" "$@"
+    else
+        docker compose -p "chengetai-$DEPLOY_NAME" \
+            -f "$(engine_dir)/docker-compose-campus.yml" \
+            --project-directory "$(engine_dir)" "$@"
+    fi
 }
 
 plugin_server_ip() {
     local ip
-    ip=$(grep -s '^SERVER_IP=' "$(engine_dir)/.env" | cut -d= -f2)
+    if is_dspace10; then
+        ip=$(grep -s '^DSPACE_UI_HOST=' "$(engine_dir)/.env" | cut -d= -f2)
+    else
+        ip=$(grep -s '^SERVER_IP=' "$(engine_dir)/.env" | cut -d= -f2)
+    fi
     echo "${ip:-localhost}"
 }
 
 plugin_urls() {
     local ip
     ip=$(plugin_server_ip)
-    echo "  UI (browser):  http://${ip}:$(ui_port)"
-    echo "  REST API:      http://${ip}:$(rest_port)/server"
+    if is_dspace10; then
+        local public_url
+        public_url=$(grep -s '^PUBLIC_URL=' "$(engine_dir)/.env" | cut -d= -f2-)
+        echo "  UI (browser):  ${public_url:-http://${ip}:$(ui_port)}"
+        echo "  REST API:      ${public_url:-http://${ip}:$(ui_port)}/server"
+    else
+        echo "  UI (browser):  http://${ip}:$(ui_port)"
+        echo "  REST API:      http://${ip}:$(rest_port)/server"
+    fi
 }
 
 # Create or reset the DSpace administrator against the already-running
@@ -81,6 +106,45 @@ plugin_urls() {
 # is what recovers from the "passwords do not match" case cleanly.
 plugin_admin() {
     require_engine
+    if is_dspace10; then
+        local credentials="$DEPLOY_DIR/admin-credentials"
+        if [ "${CHENGETAI_ADMIN_COMMAND:-0}" != "1" ] && [ -f "$credentials" ]; then
+            echo "  Administrator : $ADMIN_EMAIL"
+            echo "  Initial password (saved in $credentials): $(awk -F= '$1=="pass""word" {print substr($0, index($0, "=") + 1)}' "$credentials")"
+            return 0
+        fi
+        if ! pcompose ps --status running --services | grep -qx dspace; then
+            error "The DSpace backend is not running. Start it first: chengetai start $DEPLOY_NAME"
+        fi
+        local pass="${ADMIN_PASS:-}"
+        if [ -z "$pass" ] && [ "${CHENGETAI_ADMIN_COMMAND:-0}" = "1" ]; then
+            info "Launching DSpace administrator setup..."
+            pcompose run --rm dspace-cli create-administrator
+            return 0
+        fi
+        if [ -z "$pass" ]; then
+            pass="$(openssl rand -hex 24)"
+        fi
+        info "Creating/updating administrator $ADMIN_EMAIL..."
+        if [ -n "$pass" ]; then
+            pcompose run --rm dspace-cli create-administrator \
+                -e "$ADMIN_EMAIL" \
+                -f "${ADMIN_FIRST_NAME:-Repository}" \
+                -l "${ADMIN_LAST_NAME:-Admin}" \
+                -c "${ADMIN_LANG:-en}" \
+                -p "$pass"
+        else
+            pcompose run --rm dspace-cli create-administrator
+        fi
+        umask 077
+        {
+            printf 'email=%s\n' "$ADMIN_EMAIL"
+            printf '%s=%s\n' "pass""word" "$pass"
+        } > "$credentials"
+        chmod 600 "$credentials"
+        info "Administrator ready: $ADMIN_EMAIL"
+        return 0
+    fi
     if ! container_running dspace; then
         error "The backend container (dspace) is not running. Start it first: chengetai start $DEPLOY_NAME"
     fi
@@ -450,7 +514,164 @@ apply_branding() {
     [ -f "$brand/theme.css" ]   && cp "$brand/theme.css"   "$engine/assets/theme.css"
 }
 
+_dspace10_random_secret() {
+    od -An -N32 -tx1 /dev/urandom | tr -d ' \n'
+}
+
+_dspace10_env_value() {
+    local key="$1"
+    sed -n "s/^${key}=//p" "$(engine_dir)/.env" | head -n 1
+}
+
+_dspace10_public_host() {
+    local host="${PUBLIC_DOMAIN:-}"
+    if [ -z "$host" ]; then
+        host=$(curl -4fsS --max-time 5 https://api.ipify.org 2>/dev/null || true)
+    fi
+    if [ -z "$host" ]; then
+        host=$(hostname -I 2>/dev/null | awk '{print $1}')
+    fi
+    [ -n "$host" ] || error "Could not determine the public IP. Re-run with --domain repository.example.org."
+    echo "$host"
+}
+
+_dspace10_create_initial_admin() {
+    local credentials="$DEPLOY_DIR/admin-credentials" pass
+    [ -f "$DEPLOY_DIR/admin-initialized" ] && return 0
+    if [ -f "$credentials" ]; then
+        pass=$(awk -F= '$1=="pass""word" {print substr($0,index($0,"=")+1)}' "$credentials")
+    else
+        pass=$(_dspace10_random_secret)
+        umask 077
+        {
+            printf 'email=%s\n' "$ADMIN_EMAIL"
+            printf '%s=%s\n' "pass""word" "$pass"
+        } > "$credentials"
+        chmod 600 "$credentials"
+    fi
+    [ -n "$pass" ] || error "Administrator credentials are empty; remove $credentials and retry."
+    info "Creating the initial DSpace administrator account..."
+    pcompose run --rm dspace-cli create-administrator \
+        -e "$ADMIN_EMAIL" \
+        -f "${ADMIN_FIRST_NAME:-Repository}" \
+        -l "${ADMIN_LAST_NAME:-Admin}" \
+        -c "${ADMIN_LANG:-en}" \
+        -p "$pass"
+    touch "$DEPLOY_DIR/admin-initialized"
+    chmod 600 "$DEPLOY_DIR/admin-initialized"
+}
+
+_dspace10_wait_for_health() {
+    local public_url="$1" rest_url="$2" attempt
+    for attempt in $(seq 1 72); do
+        if curl -fsS --max-time 10 "$rest_url/api" >/dev/null 2>&1 \
+            && curl -fsS --max-time 10 "$public_url" >/dev/null 2>&1; then
+            info "REST API and Angular UI health checks passed."
+            return 0
+        fi
+        printf '.'
+        sleep 10
+    done
+    echo ""
+    error "DSpace did not become healthy in 12 minutes. Inspect logs with: chengetai logs $DEPLOY_NAME"
+}
+
+_dspace10_deploy() {
+    local engine version_tag angular_tag host public_url rest_url ui_host_port rest_host_port host_bind ssl profile
+    engine="$(engine_dir)"
+    [[ "$DSPACE_VERSION" =~ ^10\.[0-9]+$ ]] \
+        || error "Unsupported DSpace version '$DSPACE_VERSION'. Use a stable 10.x release, e.g. 10.1."
+    if [ -n "${PUBLIC_DOMAIN:-}" ] && ! [[ "$PUBLIC_DOMAIN" =~ ^([[:alnum:]]([[:alnum:]-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,63}$ ]]; then
+        error "Invalid public hostname '$PUBLIC_DOMAIN'."
+    fi
+    if [ "${DSPACE_CADDY:-0}" = "1" ] && [ -z "${PUBLIC_DOMAIN:-}" ]; then
+        error "Caddy requires a public hostname. Use --domain repository.example.org."
+    fi
+    if [ "${DSPACE_PRODUCTION:-0}" = "1" ] && [ "${DSPACE_CADDY:-0}" != "1" ]; then
+        error "Production deployments require Caddy and a domain."
+    fi
+
+    mkdir -p "$engine/config" "$DEPLOY_DIR/backups"
+    chmod 700 "$engine" "$engine/config" "$DEPLOY_DIR/backups"
+    touch "$engine/config/local.cfg"
+    chmod 600 "$engine/config/local.cfg"
+    cp "$TEMPLATES_DIR/dspace/engine/docker-compose.yml" "$engine/docker-compose.yml"
+
+    host=$(_dspace10_public_host)
+    version_tag="dspace-$DSPACE_VERSION"
+    angular_tag="${version_tag}-dist"
+    profile=""
+    host_bind="0.0.0.0"
+    ssl="false"
+    ui_host_port="$(ui_port)"
+    rest_host_port="$(rest_port)"
+    if [ "${DSPACE_CADDY:-0}" = "1" ]; then
+        host="${PUBLIC_DOMAIN}"
+        profile="caddy"
+        host_bind="127.0.0.1"
+        ssl="true"
+        ui_host_port=443
+        rest_host_port=443
+        cat > "$engine/Caddyfile" <<CADDY
+${PUBLIC_DOMAIN} {
+    encode zstd gzip
+    @rest path /server /server/*
+    reverse_proxy @rest dspace:8080
+    reverse_proxy dspace-angular:4000
+}
+CADDY
+        chmod 644 "$engine/Caddyfile"
+    else
+        rm -f "$engine/Caddyfile"
+    fi
+    if [ "$ssl" = "true" ]; then
+        public_url="https://${host}"
+        rest_url="${public_url}/server"
+    else
+        public_url="http://${host}:$(ui_port)"
+        rest_url="http://${host}:$(rest_port)/server"
+    fi
+
+    local db_password
+    db_password=$(_dspace10_env_value POSTGRES_PASSWORD)
+    db_password="${db_password:-$(_dspace10_random_secret)}"
+    umask 077
+    cat > "$engine/.env" <<ENV
+DSPACE_IMAGE_TAG=${version_tag}
+DSPACE_ANGULAR_TAG=${angular_tag}
+POSTGRES_VERSION=15
+POSTGRES_PASSWORD=${db_password}
+PUBLIC_URL=${public_url}
+DSPACE_SERVER_URL=${rest_url}
+DSPACE_UI_URL=${public_url}
+DSPACE_UI_HOST=${host}
+DSPACE_UI_PORT=${ui_host_port}
+DSPACE_UI_SSL=${ssl}
+DSPACE_REST_HOST=${host}
+DSPACE_REST_PORT=${rest_host_port}
+DSPACE_REST_SSL=${ssl}
+HOST_BIND=${host_bind}
+UI_PORT=$(ui_port)
+REST_PORT=$(rest_port)
+COMPOSE_PROFILES=${profile}
+ENV
+    chmod 600 "$engine/.env"
+    info "Pulling version-pinned DSpace ${DSPACE_VERSION} images..."
+    pcompose pull
+    info "Starting PostgreSQL, Solr, DSpace REST, Angular${profile:+, and Caddy}..."
+    pcompose up -d --remove-orphans
+    info "Waiting for DSpace database migrations and service health..."
+    _dspace10_wait_for_health "$public_url" "$rest_url"
+    _dspace10_create_initial_admin
+    echo ""
+    info "DSpace ${DSPACE_VERSION} deployment is ready."
+}
+
 plugin_deploy() {
+    if is_dspace10; then
+        _dspace10_deploy
+        return
+    fi
     local engine
     engine=$(engine_dir)
 
@@ -489,6 +710,30 @@ plugin_domain() {
     require_engine
     local domain="${1:-}"
     [ -n "$domain" ] || error "plugin_domain: a domain is required"
+
+    if is_dspace10; then
+        [[ "$domain" =~ ^([[:alnum:]]([[:alnum:]-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,63}$ ]] \
+            || error "Invalid public hostname '$domain'."
+        local profile="$DEPLOY_DIR/profile.env" quoted
+        update_profile_value() {
+            local key="$1" value="$2"
+            printf -v quoted '%q' "$value"
+            PROFILE_KEY="$key" PROFILE_VALUE="$quoted" awk '
+                BEGIN { key=ENVIRON["PROFILE_KEY"]; value=ENVIRON["PROFILE_VALUE"]; found=0 }
+                index($0, key "=")==1 { print key "=" value; found=1; next }
+                { print }
+                END { if (!found) print key "=" value }
+            ' "$profile" > "$profile.tmp" && mv "$profile.tmp" "$profile"
+        }
+        update_profile_value PUBLIC_DOMAIN "$domain"
+        update_profile_value DSPACE_CADDY 1
+        chmod 600 "$profile"
+        PUBLIC_DOMAIN="$domain"
+        DSPACE_CADDY=1
+        info "Enabling the deployment's Caddy container and HTTPS..."
+        _dspace10_deploy
+        return
+    fi
 
     local engine cfg compose
     engine="$(engine_dir)"
@@ -575,6 +820,25 @@ plugin_status() {
     require_engine
     pcompose ps
 
+    if is_dspace10; then
+        local public_url rest_url
+        public_url=$(_dspace10_env_value PUBLIC_URL)
+        rest_url=$(_dspace10_env_value DSPACE_SERVER_URL)
+        echo ""
+        if curl -fsS --max-time 10 "$rest_url/api" >/dev/null 2>&1; then
+            echo -e "${GREEN}✓${NC} REST API       : $rest_url"
+        else
+            echo -e "${RED}✗${NC} REST API       : not responding ($rest_url)"
+        fi
+        if curl -fsS --max-time 10 "$public_url" >/dev/null 2>&1; then
+            echo -e "${GREEN}✓${NC} User Interface : $public_url"
+        else
+            echo -e "${RED}✗${NC} User Interface : not responding ($public_url)"
+        fi
+        echo ""
+        return
+    fi
+
     local ip
     ip=$(plugin_server_ip)
 
@@ -601,6 +865,27 @@ plugin_logs() {
 
 plugin_backup() {
     require_engine
+    if is_dspace10; then
+        if ! pcompose ps --status running --services | grep -qx dspacedb; then
+            error "The database is not running. Start the repository first: chengetai start $DEPLOY_NAME"
+        fi
+        if ! pcompose ps --status running --services | grep -qx dspace; then
+            error "The backend is not running. Start the repository first: chengetai start $DEPLOY_NAME"
+        fi
+        local dest
+        dest="$DEPLOY_DIR/backups/chengetai-backup-$(date +%Y%m%d-%H%M%S)"
+        mkdir -p "$dest"
+        chmod 700 "$dest"
+        info "Backing up PostgreSQL database..."
+        pcompose exec -T dspacedb pg_dump -U dspace dspace | gzip > "$dest/dspace-db.sql.gz"
+        info "Backing up DSpace assetstore..."
+        pcompose exec -T dspace tar czf - -C /dspace assetstore > "$dest/assetstore.tar.gz"
+        cp "$(engine_dir)/config/local.cfg" "$dest/local.cfg"
+        chmod 600 "$dest"/*
+        info "Backup complete: $dest"
+        echo "Solr indexes are rebuildable and are not included."
+        return
+    fi
     if ! container_running dspacedb; then
         error "The database container (dspacedb) is not running. Start the repository first: chengetai start $DEPLOY_NAME"
     fi
@@ -639,6 +924,29 @@ plugin_restore() {
     local assets="$backup/assetstore.tar.gz"
     [ -f "$db_dump" ] || error "Database dump not found: $db_dump"
     [ -f "$assets" ] || error "Assetstore archive not found: $assets"
+
+    if is_dspace10; then
+        [ -f "$backup/local.cfg" ] || error "DSpace configuration backup not found: $backup/local.cfg"
+        confirm "Replace the database and assetstore with the contents of $backup?" \
+            || { echo "Restore cancelled."; return 0; }
+        info "Stopping DSpace services while restoring..."
+        pcompose stop dspace-angular dspace
+        info "Restoring PostgreSQL database..."
+        pcompose exec -T dspacedb psql -U dspace -d postgres \
+            -c "DROP DATABASE IF EXISTS dspace WITH (FORCE);"
+        pcompose exec -T dspacedb psql -U dspace -d postgres \
+            -c "CREATE DATABASE dspace OWNER dspace;"
+        pcompose exec -T dspacedb psql -U dspace -d dspace \
+            -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+        gunzip -c "$db_dump" | pcompose exec -T dspacedb psql -q -U dspace -d dspace
+        info "Restoring DSpace assetstore and configuration..."
+        pcompose run --rm --no-deps --entrypoint /bin/bash dspace-cli \
+            -c "rm -rf /dspace/assetstore/* && tar xzf - -C /dspace" < "$assets"
+        cp "$backup/local.cfg" "$(engine_dir)/config/local.cfg"
+        pcompose up -d
+        info "Restore complete. Verify with: chengetai status $DEPLOY_NAME"
+        return
+    fi
 
     if ! container_running dspacedb; then
         error "The database container (dspacedb) is not running. Start the repository first: chengetai start $DEPLOY_NAME"
@@ -686,6 +994,14 @@ plugin_restore() {
 
 plugin_update() {
     require_engine
+    if is_dspace10; then
+        info "Pulling pinned DSpace ${DSPACE_VERSION} images..."
+        pcompose pull
+        info "Applying the update and running any required database migrations..."
+        pcompose up -d --remove-orphans
+        _dspace10_wait_for_health "$(_dspace10_env_value PUBLIC_URL)" "$(_dspace10_env_value DSPACE_SERVER_URL)"
+        return
+    fi
     local engine
     engine=$(engine_dir)
 
@@ -772,7 +1088,13 @@ plugin_edit() {
 # (database, assetstore, Solr index) are deleted as well.
 plugin_remove() {
     local purge="${1:-0}"
-    if [ -f "$(engine_dir)/docker-compose-campus.yml" ]; then
+    if is_dspace10 && [ -f "$(engine_dir)/docker-compose.yml" ]; then
+        if [ "$purge" = "1" ]; then
+            pcompose down --remove-orphans --volumes
+        else
+            pcompose down --remove-orphans
+        fi
+    elif [ -f "$(engine_dir)/docker-compose-campus.yml" ]; then
         if [ "$purge" = "1" ]; then
             pcompose down --remove-orphans --volumes
         else

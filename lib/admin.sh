@@ -50,4 +50,5 @@ if ! declare -F plugin_admin >/dev/null; then
 fi
 
 banner "Administrator account — $DEPLOY_NAME ($PLATFORM)"
+export CHENGETAI_ADMIN_COMMAND=1
 plugin_admin

@@ -52,7 +52,11 @@ fi
 # 3. Web endpoint responding (with retries — first boot is slow).
 # Plugins may set PLUGIN_HEALTH_PATH; otherwise probe the site root.
 path="${PLUGIN_HEALTH_PATH:-/}"
-url="http://localhost:$(ui_port)${path}"
+if declare -F is_dspace10 >/dev/null && is_dspace10; then
+    url="$(grep -s '^PUBLIC_URL=' "$DEPLOY_DIR/engine/.env" | cut -d= -f2-)"
+else
+    url="http://localhost:$(ui_port)${path}"
+fi
 echo ""
 info "Probing $url (up to ${TIMEOUT}s — first boot can be slow)..."
 deadline=$(( $(date +%s) + TIMEOUT ))
@@ -65,6 +69,14 @@ if [ "$ok" = "1" ]; then
     pass "Web responding at $url"
 else
     bad "Web not responding within ${TIMEOUT}s ($url) — check: chengetai logs $DEPLOY_NAME"
+fi
+if declare -F is_dspace10 >/dev/null && is_dspace10; then
+    rest_url="$(grep -s '^DSPACE_SERVER_URL=' "$DEPLOY_DIR/engine/.env" | cut -d= -f2-)/api"
+    if curl -fsSL -m 10 -o /dev/null "$rest_url"; then
+        pass "REST API responding at $rest_url"
+    else
+        bad "REST API not responding at $rest_url"
+    fi
 fi
 
 echo ""
